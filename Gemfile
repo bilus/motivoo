@@ -1,8 +1,11 @@
 source 'https://rubygems.org'
 
-require 'rack'
+gem 'rack'
+gem 'mongo'
+gem 'bson_ext'
 
 group :test do
   gem 'rspec'
   gem 'timecop'
+  gem 'rack-test'
 end
