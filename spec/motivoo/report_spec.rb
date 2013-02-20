@@ -56,4 +56,27 @@ describe Motivoo::Report do
       let(:expected_cohort_name) { "month" }
     end
   end
+  
+  shared_examples_for "report with values relative to visits" do
+    let(:current_status) { "second_visit" }
+    
+    it "should fetch visit stats" do
+      connection.should_receive(:find).with("acquisition", "visit", expected_cohort_name).and_return({})
+      report.relative_acquisitions_by(expected_cohort_name, current_status)
+    end
+    
+    it "should fetch stats for the current_status and calc the ratio" do
+      connection.stub!(:find).with("acquisition", "visit", expected_cohort_name).and_return({ "2012-10" => 4, "2012-11" => 10})
+      connection.should_receive(:find).with(expected_category, current_status, expected_cohort_name).and_return({"2012-10" => 1, "2012-11" => 5})
+
+      report.relative_acquisitions_by(expected_cohort_name, current_status).should == {"2012-10" => 0.25, "2012-11" => 0.5}
+    end
+
+    it "should assume 100% ratio when no visits" do
+      connection.stub!(:find).with("acquisition", "visit", expected_cohort_name).and_return({ "2012-10" => 0, "2012-11" => nil})
+      connection.should_receive(:find).with(expected_category, current_status, expected_cohort_name).and_return({"2012-10" => 1, "2012-11" => 5})
+
+      report.relative_acquisitions_by(expected_cohort_name, current_status).should == {"2012-10" => 1.0, "2012-11" => 1.0}
+    end
+  end
 end
