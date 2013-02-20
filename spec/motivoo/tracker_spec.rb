@@ -49,7 +49,7 @@ module Motivoo
       end
       
       it "should assign user to cohorts that are missing in user data based on current time" do
-        # TODO: Other cohorts should be independent, agreed, but shouldn't period-related cohorts be in sync? If all are missing, they should be filled but just 'day' cohort without 'week' and 'month' is probably an error.
+        # TODO: Other cohorts should be independent, agreed, but shouldn't cohort-related cohorts be in sync? If all are missing, they should be filled but just 'day' cohort without 'week' and 'month' is probably an error.
         user_data.stub!(:cohorts).and_return("day" => day_cohort)
         user_data.should_receive(:assign_to).with("week", "2013(1)")
         user_data.should_receive(:assign_to).with("month", "2013-01")
@@ -57,7 +57,7 @@ module Motivoo
       end
 
       it "should use newly assigned cohorts when tracking" do
-        # TODO: Other cohorts should be independent, agreed, but shouldn't period-related cohorts be in sync? If all are missing, they should be filled but just 'day' cohort without 'week' and 'month' is probably an error.
+        # TODO: Other cohorts should be independent, agreed, but shouldn't cohort-related cohorts be in sync? If all are missing, they should be filled but just 'day' cohort without 'week' and 'month' is probably an error.
         user_data.stub!(:cohorts).and_return("day" => day_cohort)
         connection.should_receive(:track).with(expected_category, expected_status, "month", "2013-01")
         connection.should_receive(:track).with(expected_category, expected_status, "week", "2013(1)")

@@ -10,12 +10,12 @@ module Motivoo
     
     # Tracking
     
-    def track(category, status, period_name, period)
-      @tracking.update({category: category, status: status, period_name: period_name, period: period}, {"$inc" => {count: 1}}, upsert: true)
+    def track(category, status, cohort_name, cohort)
+      @tracking.update({category: category, status: status, cohort_name: cohort_name, cohort: cohort}, {"$inc" => {count: 1}}, upsert: true)
     end
   
-    def find(category, status, period_name)
-      @tracking.find(category: category, status: status, period_name: period_name).to_a.inject({}) {|a, r| a.merge(r["period"] => r["count"])}
+    def find(category, status, cohort_name)
+      @tracking.find(category: category, status: status, cohort_name: cohort_name).to_a.inject({}) {|a, r| a.merge(r["cohort"] => r["count"])}
     end
     
     # User data
