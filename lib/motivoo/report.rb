@@ -4,12 +4,11 @@ module Motivoo
       @connection = connection
     end
     
-    def acquisitions_by(cohort, status)
-      @connection.find("acquisition", status.to_s, cohort.to_s)
-    end
-    
-    def activations_by(cohort, status)
-      @connection.find("activation", status.to_s, cohort.to_s)
+    # TODO: Duplication -- Tracker#acquisition etc.
+    [:acquisition, :activation, :retention, :referral, :revenue].each do |category|
+      define_method("#{category.to_s}s_by".to_sym) do |cohort, status|
+        @connection.find(category.to_s, status.to_s, cohort.to_s)
+      end
     end
   end
 end
