@@ -5,6 +5,8 @@ require 'rack/motivoo'
 require 'rack/test'
 
 describe "Acquisition" do
+  include RequestHelpers
+  
   let(:connection) { Motivoo::Connection.new }
   let(:report) { Motivoo::Report.new(connection) }
   
@@ -15,10 +17,6 @@ describe "Acquisition" do
         [200, {'Content-Type' => 'text/plain'}, ["Hello"]]
       }
     end
-  end
-  
-  def get(path, opts = {})
-    Rack::MockRequest.new(app).get(path, opts)
   end
   
   it "should track visits by time" do
