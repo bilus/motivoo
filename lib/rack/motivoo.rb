@@ -1,4 +1,5 @@
 require_relative '../motivoo/context'
+require_relative '../motivoo/visit'
 
 module Rack
   class Motivoo
@@ -6,19 +7,14 @@ module Rack
       @app = app
     end
     
-    TRACKED_COOKIE_KEY = "motivoo.tracked"
-    
     def call(env)
       ::Motivoo::Context.create(env) do |tracker, request|
-        unless request.cookies[TRACKED_COOKIE_KEY]
-          tracker.acquisition(:visit)
+        ::Motivoo::Visit.track(tracker, request) do |tracker, request|
+          status, headers, body = @app.call(request.env)
+
+          response = Response.new(body, status, headers)
+          response  # tracker created user data and calls serialize_into(response) and response.finish
         end
-
-        status, headers, body = @app.call(request.env)
-
-        response = Response.new(body, status, headers)
-        response.set_cookie(TRACKED_COOKIE_KEY, true)
-        response  # tracker created user data and calls serialize_into(response) and response.finish
       end
    end
   end

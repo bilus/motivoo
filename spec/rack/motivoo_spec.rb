@@ -36,18 +36,7 @@ describe "Rack middleware" do
   end
     
   it "should track visit" do
-    tracker.should_receive(:acquisition).with(:visit)
-    call(middleware, "/")
-  end
-  
-  it "should store session cookie to mark session as tracked" do
-    response.should_receive(:set_cookie)
-    call(middleware, "/")
-  end
-
-  it "should not track already tracked visit" do
-    tracker.should_not_receive(:acquisition)
-    request.stub(:cookies).and_return(double(:[] => true))
+    Motivoo::Visit.should_receive(:track).with(tracker, request).and_yield(tracker, request)
     call(middleware, "/")
   end
 end
