@@ -3,11 +3,21 @@ require_relative 'user_data'
 module Motivoo
   class Tracker
     
-    DEFAULT_COHORTS = {
+    @@cohorts = {
       "day" => lambda { Date.today.strftime("%Y-%m-%d") },
       "month" => lambda { Date.today.strftime("%Y-%m") },
       "week" => lambda { date = Date.today; "#{date.year}(#{date.cweek})" }
     }
+    
+    def self.cohorts
+      @@cohorts
+    end
+    
+    def self.define_cohort(name, &block)
+      raise "Cohort #{name} already defined." if @@cohorts.member?(name)
+      @@cohorts[name] = block
+    end
+    
     
     def initialize(user_data, connection)
       @connection = connection
@@ -46,7 +56,7 @@ module Motivoo
     private
 
     def ensure_track_once(category, status)
-      key = "#{category.to_s}_#{status.to_s}"
+      key = "#{category.to_s}##{status.to_s}"
       already_tracked = @user_data[key]
 
       unless already_tracked
@@ -57,7 +67,7 @@ module Motivoo
     
     def do_track(category, status)
       user_cohorts = @user_data.cohorts
-      DEFAULT_COHORTS.each_pair do |cohort_name, proc|
+      Tracker.cohorts.each_pair do |cohort_name, proc|
         assigned_cohort = user_cohorts[cohort_name]
         cohort = assigned_cohort || proc.call
 

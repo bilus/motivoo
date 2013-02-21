@@ -133,5 +133,16 @@ module Motivoo
         tracker.set_ext_user_id(ext_user_id)
       end
     end
+    
+    context "defining cohorts" do
+      it "should use it" do
+        Tracker.define_cohort("build_number") do
+          "123"
+        end
+        
+        connection.should_receive(:track).with("acquisition", "visit", "build_number", "123")
+        at("2013-01-01 12:00") { tracker.acquisition(:visit) }
+      end
+    end
   end
 end
