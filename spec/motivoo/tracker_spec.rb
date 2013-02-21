@@ -81,8 +81,9 @@ module Motivoo
     end
 
     context "when external user id is set" do
+      let(:ext_user_id) { "ext_user_id" }
+
       it "should delegate to user data" do
-        ext_user_id = "ext_user_id"
         user_data.should_receive(:set_ext_user_id).with(ext_user_id)
         tracker.set_ext_user_id(ext_user_id)
       end
