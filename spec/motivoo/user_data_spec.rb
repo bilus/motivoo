@@ -34,13 +34,13 @@ module Motivoo
       it "should generate a new user id if user id wasn't in cookies" do
         connection.stub!(:generate_user_id).and_return(new_user_id)
         user_data = UserData.deserialize_from(env_no_user_id, connection)
-        response.should_receive(:set_cookie).with(anything, new_user_id)
+        response.should_receive(:set_cookie).with(anything, hash_including(value: new_user_id))
         user_data.serialize_into(response)
       end
       
       it "should set user id cookie if it was" do
         user_data = UserData.deserialize_from(env_with_user_id, connection)
-        response.should_receive(:set_cookie).with(anything, user_id)
+        response.should_receive(:set_cookie).with(anything, hash_including(value: user_id))
         user_data.serialize_into(response)
       end
     end
@@ -87,7 +87,7 @@ module Motivoo
         
         it "should then serialize new user id" do
           user_data.set_ext_user_id(ext_user_id)
-          response.should_receive(:set_cookie).with(anything, new_user_id)
+          response.should_receive(:set_cookie).with(anything, hash_including(value: new_user_id))
           user_data.serialize_into(response)
         end
       

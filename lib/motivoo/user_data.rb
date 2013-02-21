@@ -2,7 +2,7 @@ require 'rack/request'
 
 module Motivoo
   class UserData
-    USER_ID_COOKIE = "motivoo.user_id"
+    USER_ID_COOKIE = "_muid"
     
     def self.deserialize_from(env, connection)
       user_id, user_data = 
@@ -15,7 +15,7 @@ module Motivoo
     end
     
     def serialize_into(response)
-      response.set_cookie(USER_ID_COOKIE, @user_id)
+      response.set_cookie(USER_ID_COOKIE, value: @user_id, path: "/", expires: Time.now + 3 * 30 * 24 * 60 * 60)
     end
 
     def initialize(user_id, hash, connection)

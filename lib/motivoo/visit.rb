@@ -1,6 +1,6 @@
 module Motivoo
   class Visit
-    VISIT_TRACKED_COOKIE_KEY = "motivoo.vt"
+    VISIT_TRACKED_COOKIE_KEY = "_mvt"
 
     def self.track(tracker, request)
       response = nil
@@ -11,7 +11,7 @@ module Motivoo
         # We're tracking visit here because the current user might have been overriden by the app (authentication).
         unless request.cookies[VISIT_TRACKED_COOKIE_KEY]
           tracker.acquisition(:visit, allow_repeated: true)
-          response.set_cookie(VISIT_TRACKED_COOKIE_KEY, true)
+          response.set_cookie(VISIT_TRACKED_COOKIE_KEY, value: true, path: "/")
         end
       end
       response
