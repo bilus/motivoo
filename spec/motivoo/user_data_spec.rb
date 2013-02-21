@@ -9,13 +9,14 @@ module Motivoo
     let(:user_id) { "user_id" }
     let(:env_with_user_id) { {"HTTP_COOKIE" => "#{UserData::USER_ID_COOKIE}=#{user_id}"} }
     let(:cohorts) { {"month" => "2012-10"} }
-    let(:user_data) { {"cohorts" => cohorts} }
 
     let(:response) { mock("response") }
     
     context "when deserializing from env" do
+      let(:user_data_hash) { {"cohorts" => cohorts} }
+
       it "should find or create user data if user id is in cookies" do
-        connection.should_receive(:find_or_create_user_data).with(user_id).and_return(user_data)
+        connection.should_receive(:find_or_create_user_data).with(user_id).and_return(user_data_hash)
         user_data = UserData.deserialize_from(env_with_user_id, connection)
         user_data.cohorts.should == cohorts
       end
@@ -111,6 +112,22 @@ module Motivoo
           connection.should_receive(:set_user_data).with(user_id, "ext_user_id" => ext_user_id)
           user_data.set_ext_user_id(ext_user_id)
         end
+      end
+    end
+    
+    context "user-defined fields" do
+      let(:key) { "key" }
+      let(:sample_value) { "sample_value" }
+      let(:user_data) { UserData.new(user_id, {}, connection)}
+
+      it "should allow reading" do
+        connection.should_receive(:get_user_data).with(user_id, key).and_return(sample_value)
+        user_data[key].should == sample_value
+      end
+      
+      it "should allow updates" do
+        connection.should_receive(:set_user_data).with(user_id, key => sample_value)
+        user_data[key] = sample_value
       end
     end
   end

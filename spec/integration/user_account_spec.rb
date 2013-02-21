@@ -65,10 +65,8 @@ describe "Integration with user accounts" do
     at("2012-12-15 14:00") { user1 = get("/login") }
     at("2012-12-15 14:00") { get("/review", user1) }
 
-    puts "<br>"
-    puts report.acquisitions_by(:month, :visit).inspect
     report.activations_by(:month, :review).should == {"2012-10" => 1}
-    report.relative_activations_by(:month, :review).should == {"2012-10" => 1.0}
+    report.relative_activations_by(:month, :review, report.acquisitions_by(:month, :first_visit)).should == {"2012-10" => 1.0}
   end
   
   

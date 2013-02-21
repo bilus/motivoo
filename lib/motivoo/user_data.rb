@@ -44,6 +44,16 @@ module Motivoo
       end
     end
     
+    def [](key)
+      # TODO: Cache it?
+      @connection.get_user_data(@user_id, key)
+    end
+    
+    def []=(key, value)
+      # TODO ext_user_id can be set directly by the user bypassing code in UserData#set_ext_user_id
+      @connection.set_user_data(@user_id, key => value)
+    end
+    
     # Testing
     
     def inspect

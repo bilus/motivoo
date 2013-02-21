@@ -24,32 +24,45 @@ module Motivoo
         response
       end
     end
+
+    context "when tracking a visit" do
+      context "when visit not tracked yet" do
+        before(:each) do
+          request.stub(:cookies).and_return(double(:[] => nil))
+        end
+
+        it "should track it" do
+          tracker.should_receive(:acquisition).with(:visit, anything)
+          Visit.track(tracker, request) { response }
+        end
     
-    context "visit not tracked yet" do
-      before(:each) do
-        request.stub(:cookies).and_return(double(:[] => nil))
+        it "should store session cookie to mark session as tracked" do
+          response.should_receive(:set_cookie)
+          Visit.track(tracker, request) { response }
+        end
+        
+        it "should allow repeat visits" do
+          tracker.should_receive(:acquisition).with(:visit, hash_including(allow_repeated: true))
+          Visit.track(tracker, request) { response }
+        end
       end
 
-      it "should track visit" do
-        tracker.should_receive(:acquisition)
-        Visit.track(tracker, request) { response }
-      end
-    
-      it "should store session cookie to mark session as tracked" do
-        response.should_receive(:set_cookie)
-        Visit.track(tracker, request) { response }
+      context "when visit already tracked" do
+        it "should not track it" do
+          tracker.should_not_receive(:acquisition).with(:visit, anything)
+          request.stub(:cookies).and_return(double(:[] => true))
+          Visit.track(tracker, request) { response }
+        end
       end
     end
     
-
-    context "visit already tracked" do
-      it "should not track it" do
-        tracker.should_not_receive(:acquisition)
-        request.stub(:cookies).and_return(double(:[] => true))
+    context "when tracking the first visit" do
+      it "should delegate to tracker" do
+        tracker.should_receive(:acquisition).with(:first_visit)
         Visit.track(tracker, request) { response }
       end
     end
-    
+ 
     it "should return response" do
       Visit.track(tracker, request) { response }.should == response
     end

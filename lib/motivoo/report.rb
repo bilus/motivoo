@@ -10,13 +10,12 @@ module Motivoo
         @connection.find(category.to_s, status.to_s, cohort.to_s)
       end
 
-      define_method("relative_#{category.to_s}s_by".to_sym) do |cohort, status|
-        visits = @connection.find("acquisition", "visit", cohort.to_s)
+      define_method("relative_#{category.to_s}s_by".to_sym) do |cohort, status, base_report|
         this = @connection.find(category.to_s, status.to_s, cohort.to_s)
         
         this.inject({}) do |acc, (cohort, count)|
-          visit_count = visits[cohort] || 0 # If no visits, make it 100%
-          ratio = count.to_f / visit_count
+          base_count = base_report[cohort] || 0 # If no base actions, make it 100%
+          ratio = count.to_f / base_count
           acc.merge(cohort => ratio.infinite? ? 1 : ratio)
         end
       end

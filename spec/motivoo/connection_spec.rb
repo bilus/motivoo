@@ -25,10 +25,10 @@ describe Motivoo::Connection do
       connection.track("acquisition", "visit", cohort_name, cohort2)
       connection.find("acquisition", "visit", cohort_name).should == {cohort1 => 1, cohort2 => 3}
     end
-  end  
+  end    
   
   context "[user data]" do
-    let(:id) { BSON::ObjectId.new }
+    let(:id) { BSON::ObjectId.new.to_s }
 
     it "should create user data if it isn't there setting its id" do
       connection.find_or_create_user_data(id).should == {}
@@ -75,5 +75,20 @@ describe Motivoo::Connection do
         connection.find_or_create_user_data(id).should == {}
       end
     end 
+    
+    context "user-defined fields" do
+      let(:key) { "key" }
+      let(:sample_value) { "sample_value" }
+      let!(:user_id) { connection.generate_user_id }
+      
+      it "should return nil if field not set" do
+        connection.get_user_data(user_id, key).should be_nil
+      end
+      
+      it "should allow updates" do
+        connection.set_user_data(user_id, key => sample_value)
+        connection.get_user_data(user_id, key).should == sample_value
+      end
+    end
   end
 end

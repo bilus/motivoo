@@ -9,7 +9,12 @@ module Motivoo
       user_data = mock("user_data").as_null_object
       user_data
     end
+    
     let(:tracker) { Tracker.new(user_data, connection) }
+  
+    before(:each) do
+      user_data.stub!(:[]).and_return(nil)
+    end
   
     context "when serializing into hash" do
       it "should return hash with an entry pointing to itself" do
@@ -24,7 +29,7 @@ module Motivoo
       end
       
       it "should raise error if it's not there" do
-        lambda { tracker.deserialize_from({}) }.should raise_error
+        lambda { |opts = {}| tracker.deserialize_from({}) }.should raise_error
       end
     end
   
@@ -35,7 +40,7 @@ module Motivoo
       
       it "should find out which cohorts the user is assigned to" do
         user_data.should_receive(:cohorts).and_return("month" => month_cohort, "week" => week_cohort, "day" => day_cohort)
-        track
+        track.call
       end
       
       it "should track by month, week and day based on cohorts user is assigned to regardless of the time of visit" do
@@ -43,7 +48,7 @@ module Motivoo
         connection.should_receive(:track).with(expected_category, expected_status, "month", month_cohort)
         connection.should_receive(:track).with(expected_category, expected_status, "week", week_cohort)
         connection.should_receive(:track).with(expected_category, expected_status, "day", day_cohort)
-        at("2013-01-01 12:00") { track }
+        at("2013-01-01 12:00") { track.call }
       end
       
       it "should assign user to cohorts that are missing in user data based on current time" do
@@ -51,7 +56,7 @@ module Motivoo
         user_data.stub!(:cohorts).and_return("day" => day_cohort)
         user_data.should_receive(:assign_to).with("week", "2013(1)")
         user_data.should_receive(:assign_to).with("month", "2013-01")
-        at("2013-01-01 12:00") { track }
+        at("2013-01-01 12:00") { track.call }
       end
 
       it "should use newly assigned cohorts when tracking" do
@@ -60,23 +65,63 @@ module Motivoo
         connection.should_receive(:track).with(expected_category, expected_status, "month", "2013-01")
         connection.should_receive(:track).with(expected_category, expected_status, "week", "2013(1)")
         connection.should_receive(:track).with(expected_category, expected_status, "day", day_cohort)
-        at("2013-01-01 12:00") { track }
+        at("2013-01-01 12:00") { track.call }
+      end
+      
+      it "should track each category + status combination only once per user by default" do
+        user_data.should_receive(:[]).and_return(nil)
+        user_data.should_receive(:[]=)
+        at("2013-01-01 12:00") { track.call }
+        
+        user_data.should_receive(:[]).and_return(true)
+        connection.should_not_receive(:track)
+        at("2013-01-01 12:00") { track.call }
+      end
+      
+      it "should optionally track a category + status combination more than once per user" do
+        user_data.stub!(:[]).and_return(true) # Even if already tracked.
+        connection.should_receive(:track)
+        at("2013-01-01 12:00") { track.call(allow_repeated: true) }
       end
     end
   
-    context "when tracking acquisitions" do
+    context "when tracking acquisition" do
       it_should_behave_like("tracking category") do
-        let(:track) { tracker.acquisition(:visit) }
+        let(:track) { lambda { |opts = {}| tracker.acquisition(:visit, opts) } }
         let(:expected_category) { "acquisition" }
         let(:expected_status) { "visit" }
       end
     end
-
-    context "when tracking activations" do
+    
+    context "when tracking activation" do
       it_should_behave_like("tracking category") do
-        let(:track) { tracker.activation(:signup) }
+        let(:track) { lambda { |opts = {}| tracker.activation(:signup, opts) } }
         let(:expected_category) { "activation" }
         let(:expected_status) { "signup" }
+      end
+    end
+
+    context "when tracking retention" do
+      it_should_behave_like("tracking category") do
+        let(:track) { lambda { |opts = {}| tracker.retention(:frequent_poster, opts) } }
+        let(:expected_category) { "retention" }
+        let(:expected_status) { "frequent_poster" }
+      end
+    end
+
+    context "when tracking referral" do
+      it_should_behave_like("tracking category") do
+        let(:track) { lambda { |opts = {}| tracker.referral(:referred_active, opts) } }
+        let(:expected_category) { "referral" }
+        let(:expected_status) { "referred_active" }
+      end
+    end
+
+    context "when tracking revenue" do
+      it_should_behave_like("tracking category") do
+        let(:track) { lambda { |opts = {}| tracker.revenue(:order, opts) } }
+        let(:expected_category) { "revenue" }
+        let(:expected_status) { "order" }
       end
     end
 

@@ -39,8 +39,13 @@ describe "Activation" do
     at("2012-12-12 16:00") { get("/signup", user3) }
   end
 
-  it "should report absolute values by cohort" do
-    report.activations_by(:month, :signup).should == {"2012-10" => 1, "2012-11" => 1, "2012-12" => 1}
+  it "should track each acquisition only once for the same user" do
+    user1 = nil
+    
+    at("2012-10-10 12:00") { user1 = get("/") }
+    at("2012-10-10 14:00") { get("/signup", user1) }
+    at("2012-10-10 14:00") { get("/", user1) }
+    at("2012-12-15 14:00") { get("/login") }
   end
 
   it "should report relative values by cohort" do

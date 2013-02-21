@@ -15,9 +15,11 @@ def at(time_str)
   end
 end
   
+connection = Motivoo::Connection.new  # So it doesn't leak connections.
+  
 RSpec.configure do |config|
   config.before(:each) do
-    Motivoo::Connection.new.clear!
+    connection.clear!
   end
 end
 

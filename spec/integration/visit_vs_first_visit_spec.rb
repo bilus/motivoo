@@ -65,6 +65,6 @@ describe "Visit vs. first visit" do
     
     at("2012-12-12 15:00") { user = get("/login") }
     at("2012-12-12 15:00") { get("/", user) }
-    report.acquisitions_by(:month, :firstvisit).should == {"2012-10" => 1}
+    report.acquisitions_by(:month, :first_visit).should == {"2012-10" => 1}
   end
 end
