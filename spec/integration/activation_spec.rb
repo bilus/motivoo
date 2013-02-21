@@ -1,14 +1,7 @@
 require 'spec_helper'
-require 'motivoo/connection'
-require 'motivoo/report'
-require 'motivoo/tracker'
-require 'rack/motivoo'
 
 describe "Activation" do
-  include RequestHelpers
-  
-  let(:connection) { Motivoo::Connection.new }
-  let(:report) { Motivoo::Report.new(connection) }
+  include SpecHelpers
   
   def app
     Rack::Builder.app do

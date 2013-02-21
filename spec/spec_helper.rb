@@ -3,6 +3,10 @@ $: << "../../lib"
 require 'time'
 require 'timecop'
 require 'motivoo/connection'
+require 'motivoo/report'
+require 'motivoo/tracker'
+require 'rack/motivoo'
+
 require 'rack/test'
 
 def at(time_str) 
@@ -17,7 +21,7 @@ RSpec.configure do |config|
   end
 end
 
-module RequestHelpers
+module SpecHelpers
   def get(path, opts = {})
     options = 
       if opts.is_a?(Rack::Response)
@@ -27,5 +31,9 @@ module RequestHelpers
         opts
       end
     Rack::MockRequest.new(app).get(path, options)
+  end
+  
+  def report
+    Motivoo::Report.new(Motivoo::Connection.new)
   end
 end

@@ -83,7 +83,7 @@ module Motivoo
           connection.should_receive(:destroy_user_data).with(user_id)
           user_data.set_ext_user_id(ext_user_id)
         end
-
+        
         it "should then serialize new user id" do
           user_data.set_ext_user_id(ext_user_id)
           response.should_receive(:set_cookie).with(anything, new_user_id)

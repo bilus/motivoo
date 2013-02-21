@@ -1,13 +1,7 @@
 require 'spec_helper'
-require 'motivoo/connection'
-require 'motivoo/report'
-require 'rack/motivoo'
 
 describe "Acquisition" do
-  include RequestHelpers
-  
-  let(:connection) { Motivoo::Connection.new }
-  let(:report) { Motivoo::Report.new(connection) }
+  include SpecHelpers
   
   def app
     app = Rack::Builder.app do
@@ -32,9 +26,9 @@ describe "Acquisition" do
   end
   
   it "should not include clicks during the same session in visit count" do
-    res = nil
-    at("2012-12-12 15:00") {res = get("/") }
-    at("2012-12-12 15:00") { get("/", "HTTP_COOKIE" => res["Set-Cookie"]) }
+    user = nil
+    at("2012-12-12 15:00") {user = get("/") }
+    at("2012-12-12 15:00") { get("/", user) }
     report.acquisitions_by(:month, :visit).should == {"2012-12" => 1}
   end
 end

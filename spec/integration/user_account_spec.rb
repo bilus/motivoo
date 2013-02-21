@@ -1,12 +1,7 @@
 require 'spec_helper'
-require 'rack/motivoo'
-require 'motivoo/report'
 
 describe "Integration with user accounts" do
-  include RequestHelpers
-
-  let(:connection) { Motivoo::Connection.new }
-  let(:report) { Motivoo::Report.new(connection) }
+  include SpecHelpers
   
   def app
     Rack::Builder.app do
@@ -41,13 +36,14 @@ describe "Integration with user accounts" do
         }
       end
     end
-    
   end
   
-  it "should count initial signup as a visit" do
-    at("2012-10-10 12:00") { get("/signup") }
-    report.acquisitions_by(:month, :visit).should == {"2012-10" => 1}
-    report.activations_by(:month, :signup).should == {"2012-10" => 1}
+  it "should not count login as a new visit" do
+    user1 = nil
+    at("2012-10-10 12:00") { user1 = get("/") }
+    at("2012-10-10 13:00") { get("/signup", user1) }
+    at("2012-12-15 14:00") { user1 = get("/login") }
+    report.acquisitions_by(:month, :visit).to_a.should_not include(["2012-12", 1])
   end
 
   it "should track user with user id in cookies" do
@@ -69,8 +65,11 @@ describe "Integration with user accounts" do
     at("2012-12-15 14:00") { user1 = get("/login") }
     at("2012-12-15 14:00") { get("/review", user1) }
 
+    puts "<br>"
+    puts report.acquisitions_by(:month, :visit).inspect
     report.activations_by(:month, :review).should == {"2012-10" => 1}
     report.relative_activations_by(:month, :review).should == {"2012-10" => 1.0}
   end
+  
   
 end
