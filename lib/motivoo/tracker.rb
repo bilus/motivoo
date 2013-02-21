@@ -23,6 +23,10 @@ module Motivoo
     def self.deserialize_from(hash)
       hash[HASH_KEY] or raise "Tracker couldn't be found in the hash. Internal error."
     end
+    
+    def set_ext_user_id(ext_user_id)
+      @user_data.set_ext_user_id(ext_user_id)
+    end
 
     [:acquisition, :activation, :retention, :referral, :revenue].each do |category|
       define_method(category) do |status|
@@ -30,6 +34,7 @@ module Motivoo
         DEFAULT_COHORTS.each_pair do |cohort_name, proc|
           assigned_cohort = user_cohorts[cohort_name]
           cohort = assigned_cohort || proc.call
+
           # TODO: Performance issue, each one is a separate HTTP call to the database server. Calls can be easily combined:
           # @user_data.assign_to(cohort_name1: cohort1, cohort_name2: cohort2 ...)
           # @connection.track(..array...)

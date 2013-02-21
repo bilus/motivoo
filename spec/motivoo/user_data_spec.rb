@@ -59,5 +59,59 @@ module Motivoo
         user_data.cohorts[cohort_name].should == cohort
       end
     end
+    
+    context "when external user id is set" do
+      let(:ext_user_id) { "ext_user_id" }
+      let!(:user_data) do
+        connection.stub!(:find_or_create_user_data).and_return({})
+        UserData.deserialize_from(env_with_user_id, connection)
+      end
+      let(:new_user_id) { "new_user_id" }
+      let(:user_data_hash) { {"cohorts" => cohorts} }
+      
+      it "should find existing user data record by external user id" do
+        connection.should_receive(:find_user_data_by_ext_user_id).with(ext_user_id).and_return([new_user_id, user_data_hash])
+        user_data.set_ext_user_id(ext_user_id)
+      end
+      
+      context "if record found" do
+        before(:each) do
+          connection.stub!(:find_user_data_by_ext_user_id).and_return([new_user_id, user_data_hash])
+        end
+      
+        it "should delete obsolete user data record" do
+          connection.should_receive(:destroy_user_data).with(user_id)
+          user_data.set_ext_user_id(ext_user_id)
+        end
+
+        it "should then serialize new user id" do
+          user_data.set_ext_user_id(ext_user_id)
+          response.should_receive(:set_cookie).with(anything, new_user_id)
+          user_data.serialize_into(response)
+        end
+      
+        it "should set cohorts" do
+          user_data.set_ext_user_id(ext_user_id)
+          user_data.cohorts.should == cohorts
+        end
+        
+        it "should initialize cohorts to empty hash if not in the record" do
+          connection.stub!(:find_user_data_by_ext_user_id).and_return([new_user_id, user_data_hash.merge("cohorts" => nil)])
+          user_data.set_ext_user_id(ext_user_id)
+          user_data.cohorts.should == {}
+        end
+      end
+      
+      context "if record not found" do
+        before(:each) do
+          connection.stub!(:find_user_data_by_ext_user_id).and_return(nil)
+        end
+      
+        it "should update the current record with the external user id" do
+          connection.should_receive(:set_user_data).with(user_id, "ext_user_id" => ext_user_id)
+          user_data.set_ext_user_id(ext_user_id)
+        end
+      end
+    end
   end
 end

@@ -27,8 +27,6 @@ module Motivoo
         lambda { tracker.deserialize_from({}) }.should raise_error
       end
     end
-    
-    
   
     shared_examples_for("tracking category") do
       let(:month_cohort) { "2012-12" }
@@ -82,5 +80,12 @@ module Motivoo
       end
     end
 
+    context "when external user id is set" do
+      it "should delegate to user data" do
+        ext_user_id = "ext_user_id"
+        user_data.should_receive(:set_ext_user_id).with(ext_user_id)
+        tracker.set_ext_user_id(ext_user_id)
+      end
+    end
   end
 end

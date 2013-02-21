@@ -3,7 +3,6 @@ require 'motivoo/connection'
 require 'motivoo/report'
 require 'motivoo/tracker'
 require 'rack/motivoo'
-require 'rack/test'
 
 describe "Activation" do
   include RequestHelpers
@@ -12,7 +11,7 @@ describe "Activation" do
   let(:report) { Motivoo::Report.new(connection) }
   
   def app
-    app = Rack::Builder.app do
+    Rack::Builder.app do
       use Rack::Motivoo
       map "/" do
         run lambda { |env|

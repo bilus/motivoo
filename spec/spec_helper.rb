@@ -3,6 +3,7 @@ $: << "../../lib"
 require 'time'
 require 'timecop'
 require 'motivoo/connection'
+require 'rack/test'
 
 def at(time_str) 
   Timecop.freeze(Time.parse(time_str)) do

@@ -2,7 +2,6 @@ require 'spec_helper'
 require 'motivoo/connection'
 require 'motivoo/report'
 require 'rack/motivoo'
-require 'rack/test'
 
 describe "Acquisition" do
   include RequestHelpers

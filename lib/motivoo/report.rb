@@ -9,9 +9,7 @@ module Motivoo
       define_method("#{category.to_s}s_by".to_sym) do |cohort, status|
         @connection.find(category.to_s, status.to_s, cohort.to_s)
       end
-    end
-    
-    [:acquisition, :activation, :retention, :referral, :revenue].each do |category|
+
       define_method("relative_#{category.to_s}s_by".to_sym) do |cohort, status|
         visits = @connection.find("acquisition", "visit", cohort.to_s)
         this = @connection.find(category.to_s, status.to_s, cohort.to_s)

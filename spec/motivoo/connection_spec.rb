@@ -31,12 +31,13 @@ describe Motivoo::Connection do
     let(:id) { BSON::ObjectId.new }
 
     it "should create user data if it isn't there setting its id" do
-      connection.find_or_create_user_data(id).should == {"_id" => id} # TODO: It should not return _id at all. Once records can be modified and be told apart, rewrite the spec.
+      connection.find_or_create_user_data(id).should == {}
     end
 
     it "should find user data if it's already there" do
       existing = connection.find_or_create_user_data(id)
-      connection.find_or_create_user_data(id).should == {"_id" => id}
+      connection.assign_cohort(id, cohort_name, cohort1)
+      connection.find_or_create_user_data(id).should == {"cohorts" => {cohort_name => cohort1}}
     end
     
     it "should generate user id" do
@@ -50,5 +51,29 @@ describe Motivoo::Connection do
       connection.assign_cohort(user_id, cohort_name, cohort)
       connection.find_or_create_user_data(user_id)["cohorts"].should == {cohort_name => cohort}
     end
+    
+    context "when finding by external user id" do
+      let(:ext_user_id) { "ext_user_id" }
+      
+      it "should return nil if it isn't there" do
+        connection.find_user_data_by_ext_user_id(ext_user_id).should == nil
+      end
+
+      it "should find user data if it's already there" do
+        connection.find_or_create_user_data(id)
+        connection.assign_cohort(id, "release", "v1")
+        connection.set_user_data(id, "ext_user_id" => ext_user_id)
+        connection.find_user_data_by_ext_user_id(ext_user_id).should == [id, {"ext_user_id" => ext_user_id, "cohorts" => {"release" => "v1"}}]
+      end
+    end   
+    
+    context "when destroying user data" do
+      it "should no longer find it" do
+        existing = connection.find_or_create_user_data(id)
+        connection.assign_cohort(id, cohort_name, cohort1)
+        connection.destroy_user_data(id)
+        connection.find_or_create_user_data(id).should == {}
+      end
+    end 
   end
 end

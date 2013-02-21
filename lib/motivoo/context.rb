@@ -10,6 +10,7 @@ module Motivoo
       user_data = UserData.deserialize_from(env, connection)
       tracker = Tracker.new(user_data, connection)
       request = Rack::Request.new(tracker.serialize_into(env))
+      
       if block_given?
         response = yield(tracker, request) 
         user_data.serialize_into(response)

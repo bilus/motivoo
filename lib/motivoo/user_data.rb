@@ -32,5 +32,22 @@ module Motivoo
     def cohorts
       @cohorts
     end
+    
+    def set_ext_user_id(ext_user_id)
+      user_id, user_data = @connection.find_user_data_by_ext_user_id(ext_user_id)
+      if user_id
+        @connection.destroy_user_data(@user_id)
+        @user_id = user_id
+        @cohorts = user_data["cohorts"] || {}
+      else
+        @connection.set_user_data(@user_id, "ext_user_id" => ext_user_id)
+      end
+    end
+    
+    # Testing
+    
+    def inspect
+      "{UserData cohorts=#{@cohorts.inspect} user_id=#{@user_id.inspect}}"
+    end
   end
 end
