@@ -20,7 +20,7 @@ module Motivoo
     
     # Define a cohort.
     #
-    # Example:
+    # @example
     #   Tracker.define_cohort("release") { "1.0.2" }
     #
     def self.define_cohort(name, &block)
@@ -61,7 +61,7 @@ module Motivoo
       
       # Event tracking methods.
       # 
-      # Example:
+      # @example
       #   tracker.activation(:signup)
       # tracks a signup of the current user.
       #

@@ -1,4 +1,5 @@
 require 'mongo'
+require_relative 'configuration'
 
 module Motivoo
   
@@ -9,9 +10,12 @@ module Motivoo
     # Creates a new connection.
     #
     def initialize
-      db = Mongo::Connection.new("localhost")["motivoo"]
-      @tracking = db["motivoo.tracking"]
-      @user_data = db["motivoo.user_data"]
+      config = Motivoo.configuration
+      db = Mongo::Connection.new(config.mongo_host, config.mongo_port)[config.mongo_db]
+      db.authenticate(config.mongo_user, config.mongo_password) if config.mongo_user
+      
+      @tracking = db["tracking"]
+      @user_data = db["user_data"]
       create_indices
     end
     
