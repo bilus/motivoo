@@ -3,6 +3,7 @@ require 'rack/request'
 module Motivoo
   class UserData
     USER_ID_COOKIE = "_muid"
+    EXT_USER_ID_KEY = "ext_user_id"
     
     def self.deserialize_from(env, connection)
       user_id, user_data = 
@@ -20,6 +21,7 @@ module Motivoo
 
     def initialize(user_id, hash, connection)
       @user_id = user_id
+      @ext_user_id = hash[EXT_USER_ID_KEY]
       @cohorts = hash["cohorts"] || {}
       @connection = connection
     end
@@ -35,12 +37,21 @@ module Motivoo
     
     def set_ext_user_id(ext_user_id)
       user_id, user_data = @connection.find_user_data_by_ext_user_id(ext_user_id)
+      # puts "user_id = #{user_id.inspect}"
       if user_id
-        @connection.destroy_user_data(@user_id)
-        @user_id = user_id
-        @cohorts = user_data["cohorts"] || {}
+        if user_id != @user_id
+          @connection.destroy_user_data(@user_id) unless @ext_user_id
+          @user_id = user_id
+          @cohorts = user_data["cohorts"] || {}
+          @ext_user_id = ext_user_id
+        end
       else
-        @connection.set_user_data(@user_id, "ext_user_id" => ext_user_id)
+        if @ext_user_id
+          @user_id = @connection.generate_user_id
+          @cohorts = {}
+        end
+        @ext_user_id = ext_user_id
+        @connection.set_user_data(@user_id, EXT_USER_ID_KEY => @ext_user_id)
       end
     end
     

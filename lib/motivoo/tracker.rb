@@ -57,8 +57,9 @@ module Motivoo
 
     def ensure_track_once(category, status)
       key = "#{category.to_s}##{status.to_s}"
+      # puts "ensure_track_once key = #{key.inspect} #{@user_data.inspect}"
       already_tracked = @user_data[key]
-
+      # puts "already_tracked? #{already_tracked.inspect}"
       unless already_tracked
         @user_data[key] = true
         yield

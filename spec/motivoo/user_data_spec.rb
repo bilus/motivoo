@@ -75,14 +75,44 @@ module Motivoo
         user_data.set_ext_user_id(ext_user_id)
       end
       
-      context "if record found" do
+      context "if a record found with the same user id as the current one" do
+        before(:each) do
+          connection.stub!(:find_user_data_by_ext_user_id).and_return([user_id, user_data_hash])
+        end
+        
+        it "should do absolutely nothing" do
+          connection.should_not_receive(:destroy_user_data)
+          user_data.set_ext_user_id(ext_user_id)
+        end
+      end
+      
+      context "if a record found with a different user id" do
         before(:each) do
           connection.stub!(:find_user_data_by_ext_user_id).and_return([new_user_id, user_data_hash])
         end
-      
-        it "should delete obsolete user data record" do
-          connection.should_receive(:destroy_user_data).with(user_id)
-          user_data.set_ext_user_id(ext_user_id)
+
+        context "when not associated with external user" do
+          let(:user_data) do
+            connection.stub!(:find_or_create_user_data).and_return({})
+            UserData.deserialize_from(env_with_user_id, connection)
+          end
+          
+          it "should delete obsolete user data record" do
+            connection.should_receive(:destroy_user_data).with(user_id)
+            user_data.set_ext_user_id(ext_user_id)
+          end
+        end
+        
+        context "when associated with external user" do
+          let(:user_data) do
+            connection.stub!(:find_or_create_user_data).and_return("ext_user_id" => "another_ext_user_id")
+            UserData.deserialize_from(env_with_user_id, connection)
+          end
+
+          it "should leave the user data record intact" do
+            connection.should_not_receive(:destroy_user_data)
+            user_data.set_ext_user_id(ext_user_id)
+          end
         end
         
         it "should then serialize new user id" do
@@ -108,9 +138,36 @@ module Motivoo
           connection.stub!(:find_user_data_by_ext_user_id).and_return(nil)
         end
       
-        it "should update the current record with the external user id" do
-          connection.should_receive(:set_user_data).with(user_id, "ext_user_id" => ext_user_id)
-          user_data.set_ext_user_id(ext_user_id)
+        context "when not associated with external user" do
+          let(:user_data) do
+            connection.stub!(:find_or_create_user_data).and_return({})
+            UserData.deserialize_from(env_with_user_id, connection)
+          end
+
+          it "should update the current record with the external user id" do
+            connection.should_receive(:set_user_data).with(user_id, "ext_user_id" => ext_user_id)
+            user_data.set_ext_user_id(ext_user_id)
+          end
+        end
+
+        context "when it's already associated with external user" do
+          let(:user_data) do
+            connection.stub!(:find_or_create_user_data).and_return({"ext_user_id" => "another_ext_user_id"})
+            UserData.deserialize_from(env_with_user_id, connection)
+          end
+          
+          let(:new_user_id) { "new_user_id"}
+          
+          it "should generate a new user data record" do
+            connection.should_receive(:generate_user_id).and_return(new_user_id)
+            user_data.set_ext_user_id(ext_user_id)
+          end
+          
+          it "should update the new record with the external user id" do
+            connection.stub!(:generate_user_id).and_return(new_user_id)
+            connection.should_receive(:set_user_data).with(new_user_id, "ext_user_id" => ext_user_id)
+            user_data.set_ext_user_id(ext_user_id)
+          end
         end
       end
     end

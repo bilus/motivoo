@@ -28,7 +28,7 @@ module SpecHelpers
     options = 
       if opts.is_a?(Rack::Response)
         res = opts
-        {"HTTP_COOKIE" => res["Set-Cookie"].split("\n").join(";")}
+        {"HTTP_COOKIE" => (res["Set-Cookie"] || "").split("\n").join(";")}
       else
         opts
       end

@@ -34,6 +34,7 @@ module Motivoo
       end
     end
     
+    # TODO: Change it to find_user_data(query_hash), in this specific case find_user_data("ext_user_id" => ext_user_id) so UserData completely encapsulates the concept.
     def find_user_data_by_ext_user_id(ext_user_id)
       if existing_record = @user_data.find_one("ext_user_id" => ext_user_id)
         [existing_record["_id"].to_s, reject_record_id(existing_record)]

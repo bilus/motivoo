@@ -67,7 +67,7 @@ describe Motivoo::Connection do
       end
     end   
     
-    context "when destroying user data" do
+    context "when destroying orphaned user data" do
       it "should no longer find it" do
         existing = connection.find_or_create_user_data(id)
         connection.assign_cohort(id, cohort_name, cohort1)
