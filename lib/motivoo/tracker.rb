@@ -69,12 +69,16 @@ module Motivoo
         allow_repeated = options.delete(:allow_repeated)
         raise "Unrecognized option(s): #{options.keys.join(', ')}." unless options.empty?
         
-        if allow_repeated
-          do_track(category, status)
-        else
-          ensure_track_once(category, status) do
+        begin
+          if allow_repeated
             do_track(category, status)
+          else
+            ensure_track_once(category, status) do
+              do_track(category, status)
+            end
           end
+        rescue => e
+          Kernel.puts "Error in Motivoo::Tracker##{category.to_s}: #{e}"
         end
       end
     end

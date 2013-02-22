@@ -1,4 +1,5 @@
 require 'mongo'
+require 'singleton'
 require_relative 'configuration'
 
 module Motivoo
@@ -6,6 +7,7 @@ module Motivoo
   # Connection to a MongoDB database storing Motivoo data.
   #
   class Connection
+    include Singleton
     
     # Creates a new connection.
     #

@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'motivoo/connection'
 
 describe Motivoo::Connection do
-  let(:connection) { Motivoo::Connection.new }
+  let(:connection) { Motivoo::Connection.instance }
   let(:cohort_name) { "month" }
   let(:cohort1) { "2013-10" }
   let(:cohort2) { "2013-12" }

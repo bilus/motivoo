@@ -44,10 +44,8 @@ get "/buy" do
   haml :buy
 end
 
-connection = Motivoo::Connection.new
-
 get "/report" do
-  @report = Motivoo::Report.new(connection)
+  @report = Motivoo::Report.new(Motivoo::Connection.instance)
   haml :report
 end
 

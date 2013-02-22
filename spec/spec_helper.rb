@@ -15,11 +15,9 @@ def at(time_str)
   end
 end
   
-connection = Motivoo::Connection.new  # So it doesn't leak connections.
-  
 RSpec.configure do |config|
   config.before(:each) do
-    connection.clear!
+    Motivoo::Connection.instance.clear!
   end
 end
 
@@ -36,6 +34,6 @@ module SpecHelpers
   end
   
   def report
-    Motivoo::Report.new(Motivoo::Connection.new)
+    Motivoo::Report.new(Motivoo::Connection.instance)
   end
 end

@@ -6,7 +6,7 @@ module Motivoo
     context "when it is created" do
       let!(:connection) do 
         connection = mock("connection")
-        Connection.stub!(:new).and_return(connection)
+        Connection.stub!(:instance).and_return(connection)
         connection
       end
       
@@ -38,8 +38,8 @@ module Motivoo
         user_data.stub!(:serialize_into).and_return(response)
       end
       
-      it "should create connection" do
-        Connection.should_receive(:new).and_return(connection)
+      it "should get connection instance" do
+        Connection.should_receive(:instance).and_return(connection)
         Context.create(env)
       end
       

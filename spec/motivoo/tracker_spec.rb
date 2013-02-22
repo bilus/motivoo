@@ -83,44 +83,65 @@ module Motivoo
       end
     end
   
+    shared_examples_for("an exception-safe method") do
+      before(:each) do
+        connection.stub!(:track).and_raise("An error")
+        Kernel.stub!(:puts)
+      end
+      
+      it "should not let exceptions out" do
+        lambda { track.call }.should_not raise_error
+      end
+      
+      it "should write the error to console" do
+        Kernel.should_receive(:puts)
+        track.call
+      end
+    end
+  
     context "when tracking acquisition" do
+      let(:track) { lambda { |opts = {}| tracker.acquisition(:visit, opts) } }
       it_should_behave_like("tracking category") do
-        let(:track) { lambda { |opts = {}| tracker.acquisition(:visit, opts) } }
         let(:expected_category) { "acquisition" }
         let(:expected_status) { "visit" }
       end
+      it_should_behave_like("an exception-safe method")
     end
     
     context "when tracking activation" do
+      let(:track) { lambda { |opts = {}| tracker.activation(:signup, opts) } }
       it_should_behave_like("tracking category") do
-        let(:track) { lambda { |opts = {}| tracker.activation(:signup, opts) } }
         let(:expected_category) { "activation" }
         let(:expected_status) { "signup" }
       end
+      it_should_behave_like("an exception-safe method")
     end
 
     context "when tracking retention" do
+      let(:track) { lambda { |opts = {}| tracker.retention(:frequent_poster, opts) } }
       it_should_behave_like("tracking category") do
-        let(:track) { lambda { |opts = {}| tracker.retention(:frequent_poster, opts) } }
         let(:expected_category) { "retention" }
         let(:expected_status) { "frequent_poster" }
       end
+      it_should_behave_like("an exception-safe method")
     end
 
     context "when tracking referral" do
+      let(:track) { lambda { |opts = {}| tracker.referral(:referred_active, opts) } }
       it_should_behave_like("tracking category") do
-        let(:track) { lambda { |opts = {}| tracker.referral(:referred_active, opts) } }
         let(:expected_category) { "referral" }
         let(:expected_status) { "referred_active" }
       end
+      it_should_behave_like("an exception-safe method")
     end
 
     context "when tracking revenue" do
+      let(:track) { lambda { |opts = {}| tracker.revenue(:order, opts) } }
       it_should_behave_like("tracking category") do
-        let(:track) { lambda { |opts = {}| tracker.revenue(:order, opts) } }
         let(:expected_category) { "revenue" }
         let(:expected_status) { "order" }
       end
+      it_should_behave_like("an exception-safe method")
     end
 
     context "when external user id is set" do
