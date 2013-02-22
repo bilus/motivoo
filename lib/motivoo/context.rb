@@ -4,7 +4,13 @@ require_relative 'user_data'
 require 'rack/request'
 
 module Motivoo
+
+  # Context for the execution of tracking based on an env hash.
+  #
   class Context
+    
+    # Creates the context for a given block. Used by Rack::Motivoo middleware.
+    #
     def self.create(env)
       connection = Connection.new
       user_data = UserData.deserialize_from(env, connection)

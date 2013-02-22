@@ -1,6 +1,9 @@
 require_relative 'user_data'
 
 module Motivoo
+  
+  # Event tracking.
+  #
   class Tracker
     
     @@cohorts = {
@@ -9,16 +12,24 @@ module Motivoo
       "week" => lambda { date = Date.today; "#{date.year}(#{date.cweek})" }
     }
     
+    # Returns defined cohorts.
+    #
     def self.cohorts
       @@cohorts
     end
     
+    # Define a cohort.
+    #
+    # Example:
+    #   Tracker.define_cohort("release") { "1.0.2" }
+    #
     def self.define_cohort(name, &block)
       raise "Cohort #{name} already defined." if @@cohorts.member?(name)
       @@cohorts[name] = block
     end
     
-    
+    # Creates a tracker.
+    #
     def initialize(user_data, connection)
       @connection = connection
       @user_data = user_data
@@ -26,19 +37,34 @@ module Motivoo
     
     HASH_KEY = "motivoo.tracker"
     
+    # Injects itself into the hash (used internally to store a Tracker object in Rack env).
+    #
     def serialize_into(hash)
       hash.merge(HASH_KEY => self)
     end
     
+    # Returns a Tracker instance from the hash (used internally with Rack env).
+    #
     def self.deserialize_from(hash)
       hash[HASH_KEY] or raise "Tracker couldn't be found in the hash. Internal error."
     end
     
+    # Associates the currently tracked user with an external user.
+    # Usually called after login or signup with id of the user in the user's database.
+    # This id is not visible in the cookies.
+    #
     def set_ext_user_id(ext_user_id)
       @user_data.set_ext_user_id(ext_user_id)
     end
 
-    [:acquisition, :activation, :retention, :referral, :revenue].each do |category|
+    [:acquisition, :activation, :retention, :referral, :revenue].each do |category| # TODO: Duplication -- Report#acquisitions_by etc.
+      
+      # Event tracking methods.
+      # 
+      # Example:
+      #   tracker.activation(:signup)
+      # tracks a signup of the current user.
+      #
       define_method(category) do |status, options = {}|
         allow_repeated = options.delete(:allow_repeated)
         raise "Unrecognized option(s): #{options.keys.join(', ')}." unless options.empty?

@@ -1,14 +1,18 @@
+# An example app using Motivoo. 
+# ..ugly I know.
+
 require 'sinatra'
 require 'rack/motivoo'
 require 'motivoo/tracker'
 require 'motivoo/report'
 
-connection = Motivoo::Connection.new
-
+# Fake users along with their ids.
+#
 users = {
-  "bilus" => "1",
-  "zwieciu" => "2"
+  "tom" => "1",
+  "jerry" => "2"
 }
+
 
 use Rack::Motivoo
 
@@ -18,7 +22,8 @@ end
 
 get "/signup/:user" do
   tracker = Motivoo::Tracker.deserialize_from(request.env)
-  tracker.set_ext_user_id(users[params[:user]])
+  @ext_user_id = users[params[:user]]
+  tracker.set_ext_user_id(@ext_user_id)
   tracker.activation(:signup)
   haml :signup
 end
@@ -34,6 +39,8 @@ get "/buy" do
   Motivoo::Tracker.deserialize_from(request.env).activation(:buy)
   haml :buy
 end
+
+connection = Motivoo::Connection.new
 
 get "/report" do
   @report = Motivoo::Report.new(connection)
@@ -64,7 +71,7 @@ __END__
 Home page
 
 @@ signup
-Signup successful!
+Signup successful (#{@ext_user_id})!
 
 @@login
 Login successful (#{@ext_user_id})!

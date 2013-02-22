@@ -1,7 +1,11 @@
 module Motivoo
+  
+  # Encapsulates visit tracking. Used by Rack::Motivoo middleware.
+  #
   class Visit
     VISIT_TRACKED_COOKIE_KEY = "_mvt"
 
+    # Tracks visit and the first visit of the current user.
     def self.track(tracker, request)
       response = nil
       begin

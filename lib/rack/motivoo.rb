@@ -2,6 +2,12 @@ require_relative '../motivoo/context'
 require_relative '../motivoo/visit'
 
 module Rack
+  
+  # Rack middleware.
+  # 
+  # Usage:
+  #   use Rack::Motivoo
+  #
   class Motivoo
     def initialize(app)
       @app = app
