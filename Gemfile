@@ -8,4 +8,5 @@ group :test do
   gem 'rspec'
   gem 'timecop'
   gem 'rack-test'
+  gem 'sinatra'
 end

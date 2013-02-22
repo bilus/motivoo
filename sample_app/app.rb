@@ -17,7 +17,6 @@ get "/" do
 end
 
 get "/signup/:user" do
-  puts "signup"
   tracker = Motivoo::Tracker.deserialize_from(request.env)
   tracker.set_ext_user_id(users[params[:user]])
   tracker.activation(:signup)
