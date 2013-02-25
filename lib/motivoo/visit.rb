@@ -5,7 +5,8 @@ module Motivoo
   class Visit
     VISIT_TRACKED_COOKIE_KEY = "_mvt"
 
-    # Tracks visit and the first visit of the current user.
+    # Track each visit plus the first visit of the current user.
+    #
     def self.track(tracker, request)
       response = nil
       begin

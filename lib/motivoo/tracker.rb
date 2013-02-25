@@ -66,6 +66,7 @@ module Motivoo
       # tracks a signup of the current user.
       #
       define_method(category) do |status, options = {}|
+        # puts "#{category.to_s}(#{status.inspect}) -- @user_data = #{@user_data.inspect}"
         allow_repeated = options.delete(:allow_repeated)
         raise "Unrecognized option(s): #{options.keys.join(', ')}." unless options.empty?
         

@@ -11,6 +11,7 @@ require 'rack/test'
 
 def at(time_str) 
   Timecop.freeze(Time.parse(time_str)) do
+    # print "\nat #{time_str} "
     yield
   end
 end
