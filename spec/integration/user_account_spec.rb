@@ -12,21 +12,31 @@ describe "Integration with user accounts" do
         use Rack::Motivoo
         
         get "/" do
+          # puts "/"
         end
       
         get "/review" do
+          # puts "/review"
           Motivoo::Tracker.deserialize_from(env).activation(:review)
         end
               
         get "/login/:user" do
+          # puts "/login/#{params[:user]}"
           tracker = Motivoo::Tracker.deserialize_from(env)
           tracker.set_ext_user_id(params[:user])
         end
         
         get "/signup/:user" do
+          # puts "/signup/#{params[:user]}"
           tracker = Motivoo::Tracker.deserialize_from(env)
           tracker.set_ext_user_id(params[:user])
           tracker.activation(:signup)
+        end
+        
+        get "/logout" do
+          # puts "/logout"
+          tracker = Motivoo::Tracker.deserialize_from(env)
+          tracker.set_ext_user_id(nil)
         end
       end
       
@@ -99,5 +109,21 @@ describe "Integration with user accounts" do
     at("2012-10-10 13:00") { user1 = get("/signup/user1", user1) }
     at("2012-12-10 13:00") { user2 = get("/signup/user2", user1) }
     report.activations_by(:month, :signup).should == {"2012-10" => 1, "2012-12" => 1}
+  end
+  
+  it "should support logout" do
+    user1, user2, user3 = nil
+    at("2012-10-10 12:00") { user1 = get("/") }
+    at("2012-10-10 13:00") { user1 = get("/login/user1", user1) }
+    at("2012-11-10 13:00") { user1 = get("/logout", user1) }
+    
+    at("2012-12-10 13:00") { user2 = get("/login/user2") }
+    at("2012-12-10 14:00") { user3 = get("/logout", user2) }
+    at("2012-12-10 15:00") { get("/", user3) }
+    report.acquisitions_by(:month, :first_visit).should == {"2012-10" => 1, "2012-11" => 1, "2012-12" => 2}
+    
+    # NOTE: It would be great if it didn't count the Nov logout as a new first visit but it is a side-effect of visits
+    # being tracked _after_ request is processed, i.e. after the call to tracker.set_ext_user_id(nil).
+    # Anyway, if this breaks, analyze but this isn't necessarily a symptom of a problem.
   end
 end

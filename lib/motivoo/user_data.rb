@@ -52,23 +52,33 @@ module Motivoo
     # Associates the current user with an external user id, usually pointing to an id in the user's database of the application using Motivoo.
     #
     def set_ext_user_id(ext_user_id)
-      user_id, user_data = @connection.find_user_data_by_ext_user_id(ext_user_id)
-      # puts "user_id = #{user_id.inspect}"
-      if user_id
-        if user_id != @user_id
-          @connection.destroy_user_data(@user_id) unless @ext_user_id
-          @user_id = user_id
-          @cohorts = user_data["cohorts"] || {}
-          @ext_user_id = ext_user_id
-        end
+      # puts "set_ext_user_id(#{ext_user_id.inspect}) <-- @ext_user_id = #{@ext_user_id.inspect} -- @user_id = #{@user_id.inspect} -- @cohorts = #{@cohorts.inspect}"
+      return if @ext_user_id == ext_user_id
+      
+      if ext_user_id.nil?
+        @cohorts = {}
+        @user_id = @connection.generate_user_id
       else
-        if @ext_user_id
-          @user_id = @connection.generate_user_id
+        user_id, user_data = @connection.find_user_data_by_ext_user_id(ext_user_id)
+      
+        if user_id
+          @connection.destroy_user_data(@user_id) if @ext_user_id.nil?
+          @cohorts = user_data["cohorts"]
+          @user_id = user_id
+        elsif @ext_user_id.nil?
+          @connection.set_user_data(@user_id, EXT_USER_ID_KEY => ext_user_id)
+        else
           @cohorts = {}
+          @user_id = @connection.generate_user_id
+          @connection.set_user_data(@user_id, EXT_USER_ID_KEY => ext_user_id)
         end
-        @ext_user_id = ext_user_id
-        @connection.set_user_data(@user_id, EXT_USER_ID_KEY => @ext_user_id)
       end
+      @ext_user_id = ext_user_id
+      # puts "--> @ext_user_id = #{@ext_user_id.inspect} -- @user_id = #{@user_id.inspect} -- @cohorts = #{@cohorts.inspect}"
+    end
+    
+    def ext_user_id
+      @ext_user_id
     end
     
     # Returns a user-defined user data field.
@@ -88,7 +98,7 @@ module Motivoo
     # Testing
     
     def inspect
-      "{UserData cohorts=#{@cohorts.inspect} user_id=#{@user_id.inspect}}"
+      "{UserData @cohorts=#{@cohorts.inspect} @ext_user_id=#{@ext_user_id.inspect} @user_id=#{@user_id.inspect}}"
     end
   end
 end
