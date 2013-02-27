@@ -52,7 +52,7 @@ module Motivoo
     # Associates the current user with an external user id, usually pointing to an id in the user's database of the application using Motivoo.
     #
     def set_ext_user_id(ext_user_id)
-      # puts "set_ext_user_id(#{ext_user_id.inspect}) <-- @ext_user_id = #{@ext_user_id.inspect} -- @user_id = #{@user_id.inspect} -- @cohorts = #{@cohorts.inspect}"
+      puts "set_ext_user_id(#{ext_user_id.inspect}) <-- @ext_user_id = #{@ext_user_id.inspect} -- @user_id = #{@user_id.inspect} -- @cohorts = #{@cohorts.inspect}"
       return if @ext_user_id == ext_user_id
       
       if ext_user_id.nil?
@@ -74,7 +74,7 @@ module Motivoo
         end
       end
       @ext_user_id = ext_user_id
-      # puts "--> @ext_user_id = #{@ext_user_id.inspect} -- @user_id = #{@user_id.inspect} -- @cohorts = #{@cohorts.inspect}"
+      puts "--> @ext_user_id = #{@ext_user_id.inspect} -- @user_id = #{@user_id.inspect} -- @cohorts = #{@cohorts.inspect}"
     end
     
     def ext_user_id
