@@ -6,6 +6,8 @@ module Motivoo
   #
   class Tracker
     
+    @@callbacks = {}
+    
     @@cohorts = {
       "day" => lambda { Date.today.strftime("%Y-%m-%d") },
       "month" => lambda { Date.today.strftime("%Y-%m") },
@@ -37,16 +39,17 @@ module Motivoo
     
     HASH_KEY = "motivoo.tracker"
     
-    # Injects itself into the hash (used internally to store a Tracker object in Rack env).
+    # Injects itself into the env hash (used internally to store a Tracker object in Rack env).
     #
-    def serialize_into(hash)
-      hash.merge(HASH_KEY => self)
+    def serialize_into(env)
+      @env = env.dup
+      env.merge(HASH_KEY => self)
     end
     
-    # Returns a Tracker instance from the hash (used internally with Rack env).
+    # Returns a Tracker instance from the env hash (used internally with Rack env).
     #
-    def self.deserialize_from(hash)
-      hash[HASH_KEY] or raise "Tracker couldn't be found in the hash. Internal error."
+    def self.deserialize_from(env)
+      env[HASH_KEY] or raise "Tracker couldn't be found in the hash. Internal error."
     end
     
     # Associates the currently tracked user with an external user.
@@ -82,7 +85,44 @@ module Motivoo
           Kernel.puts "Error in Motivoo::Tracker##{category.to_s}: #{e}"
         end
       end
+      
+      # Callbacks envoked before an event is tracked in a given category.
+      #
+      # @example
+      #   Tracker.before_activation { }
+      # will be invoked once before every activation.
+      #
+      # In addition, before_any is invoked for any category in addition to the category-specific handler.
+      #
+      # Arguments passed to the callback block:
+      #   status - the status (e.g. :visit),
+      #   env - the env hash,
+      #   tracker - Tracker instance,
+      #   user_data - UserData instance.
+      #
+      # To skip tracking, call skip! (see skip_tracking_spec for an example).
+      #
+      # NOTE: Be careful when tracking events from within the handler to avoid stack overflow errors.
+      #
+      # IMPORTANT: Only one callback per category is currently supported.
+      #
+      # @example
+      #   Tracker.before_acquisition { |status, | puts status }
+      # will trace status for each acquisition.
+      #
+      # Following this with:
+      #   Tracker.before_acquisition {}
+      # turns off tracing.
+      #
+      (class << self; self; end).send(:define_method, "before_#{category.to_s}".to_sym) do |&callback|
+        @@callbacks["before_#{category.to_s}".to_sym] = callback
+      end
     end
+    
+    def Tracker.before_any(&callback)
+      @@callbacks[:before_any] = callback
+    end
+    
     
     private
 
@@ -98,6 +138,9 @@ module Motivoo
     end
     
     def do_track(category, status)
+      callback_result = invoke_before_callbacks(category, status)
+      return if callback_result.skip?
+      
       user_cohorts = @user_data.cohorts
       Tracker.cohorts.each_pair do |cohort_name, proc|
         assigned_cohort = user_cohorts[cohort_name]
@@ -111,5 +154,37 @@ module Motivoo
         @connection.track(category.to_s, status.to_s, cohort_name, cohort)
       end
     end
+    
+    class CallbackContext
+      def initialize(*args, &block)
+        @skip = false
+        instance_exec(*args, &block)
+      end
+
+      def skip!
+        @skip = true
+      end
+      
+      def skip?
+        @skip
+      end
+    end
+    
+    def invoke_before_callbacks(category, status)
+      before_any = @@callbacks[:before_any]
+      result_for_any = invoke_callback(before_any, status)
+      result = invoke_callback(find_callback(category), status)
+      result.skip! if result_for_any.skip?
+      result
+    end
+    
+    def find_callback(category)
+      @@callbacks["before_#{category.to_s}".to_sym]
+    end
+    
+    def invoke_callback(callback, status)
+      block = (callback || lambda {|*args| })
+      CallbackContext.new(status, @env, self, @user_data, &block)
+    end    
   end
 end

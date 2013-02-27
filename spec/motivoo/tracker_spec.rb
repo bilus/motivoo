@@ -163,5 +163,55 @@ module Motivoo
         at("2013-01-01 12:00") { tracker.acquisition(:visit) }
       end
     end
+    
+    context "event callbacks" do
+      let(:callback) { mock_event_handler }
+      let(:skip) { lambda { |*args| skip! } }
+      let(:noop)  { lambda { |*args| } }
+      
+      before(:each) do
+        Tracker.before_acquisition(&callback)
+      end
+      
+      after(:each) do
+        Tracker.before_any {}
+        Tracker.before_acquisition {}
+        Tracker.before_activation {}
+      end
+      
+      it "should invoke once with status" do
+        callback.should_receive(:call).once.with(:visit, anything, anything, anything)
+        tracker.acquisition(:visit)
+      end
+      
+      it "should allow user to skip" do
+        Tracker.before_acquisition do |status|
+          skip!
+        end
+        connection.should_not_receive(:track)
+        tracker.acquisition(:visit)
+      end
+      
+      it "should pass the env, tracker and user data into the handler" do
+        env = {foo: "bar"}
+        tracker.serialize_into(env)
+        callback.should_receive(:call).once.with(anything, env, tracker, user_data)
+        tracker.acquisition(:visit)
+      end
+      
+      it "should skip if before_any skips" do
+        Tracker.before_any(&skip)
+        Tracker.before_activation(&noop)
+        connection.should_not_receive(:track)
+        tracker.activation(:signup)
+      end
+      
+      it "should skip if before_activation skips" do
+        Tracker.before_any(&noop)
+        Tracker.before_activation(&skip)
+        connection.should_not_receive(:track)
+        tracker.activation(:signup)
+      end
+    end
   end
 end

@@ -15,6 +15,17 @@ def at(time_str)
     yield
   end
 end
+
+def mock_event_handler
+  handler = mock("handler")
+  l = Proc.new do |*args| 
+    begin
+      handler.call(*args)
+    end
+  end
+  handler.stub!(:to_proc).and_return(l)
+  handler
+end
   
 RSpec.configure do |config|
   config.before(:each) do

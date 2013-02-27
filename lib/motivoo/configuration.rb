@@ -16,6 +16,30 @@ module Motivoo
       @mongo_db = "motivoo"
     end
 
+    def reset!
+      @mongo_host = nil
+      @mongo_db = nil
+      @mongo_port = nil
+      @mongo_user = nil
+      @mongo_password = nil
+    end
+    
+    def method_missing(meth, *args, &block)
+      if meth.to_s =~ /^(before_.+)$/ || meth.to_s =~ /^(after_.+)$/
+        Tracker.send($1.to_sym, *args, &block)
+      else
+        super
+      end
+    end
+  
+    def respond_to?(meth)
+      if meth.to_s =~ /^(before_.+)$/ || meth.to_s =~ /^(after_.+)$/
+        true
+      else
+        super
+      end
+    end
+    
     # Define a cohort.
     #
     def define_cohort(cohort_name, &block)
