@@ -59,6 +59,13 @@ module Motivoo
     def set_ext_user_id(ext_user_id)
       @user_data.set_ext_user_id(ext_user_id)
     end
+    
+    # Internal id of the currently tracked user.
+    # Note: It's not the same as external user id set by a call to set_ext_user_id!
+    #
+    def user_id
+      @user_data.user_id
+    end
 
     [:acquisition, :activation, :retention, :referral, :revenue].each do |category| # TODO: Duplication -- Report#acquisitions_by etc.
       

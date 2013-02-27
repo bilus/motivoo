@@ -126,4 +126,12 @@ describe "Integration with user accounts" do
     # being tracked _after_ request is processed, i.e. after the call to tracker.set_ext_user_id(nil).
     # Anyway, if this breaks, analyze but this isn't necessarily a symptom of a problem.
   end
+
+  it "should count visit in the same session once per user" do
+    user1, user2 = nil, nil
+    at("2012-12-12 15:00") { user1 = get("/") }
+    at("2012-12-12 15:00") { user1 = get("/login/user1", user1) }
+    at("2012-12-12 15:00") { user2 = get("/login/user2", user1) }
+    report.acquisitions_by(:month, :visit).should == {"2012-12" => 2}
+  end
 end

@@ -26,9 +26,13 @@ module Motivoo
     end
 
     context "when tracking a visit" do
+      let(:user_id) { "user_id" }
+      let(:different_user_id) { "different_user_id" }
+      
       context "when visit not tracked yet" do
         before(:each) do
           request.stub(:cookies).and_return(double(:[] => nil))
+          tracker.stub(:user_id).and_return(user_id)
         end
 
         it "should track it" do
@@ -36,8 +40,8 @@ module Motivoo
           Visit.track(tracker, request) { response }
         end
     
-        it "should store session cookie to mark session as tracked" do
-          response.should_receive(:set_cookie)
+        it "should store user id in a session cookie to mark session as tracked" do
+          response.should_receive(:set_cookie).with(anything, hash_including(value: user_id))
           Visit.track(tracker, request) { response }
         end
         
@@ -48,10 +52,33 @@ module Motivoo
       end
 
       context "when visit already tracked" do
-        it "should not track it" do
-          tracker.should_not_receive(:acquisition).with(:visit, anything)
-          request.stub(:cookies).and_return(double(:[] => true))
-          Visit.track(tracker, request) { response }
+        context "for the same user" do
+          before(:each) do
+            request.stub(:cookies).and_return(double(:[] => user_id))
+            tracker.stub(:user_id).and_return(user_id)
+          end
+
+          it "should not track it" do
+            tracker.should_not_receive(:acquisition).with(:visit, anything)
+            Visit.track(tracker, request) { response }
+          end
+        end
+        
+        context "for a different user" do
+          before(:each) do
+            request.stub(:cookies).and_return(double(:[] => user_id))
+            tracker.stub(:user_id).and_return(different_user_id)
+          end
+
+          it "should track it" do
+            tracker.should_receive(:acquisition).with(:visit, anything)
+            Visit.track(tracker, request) { response }
+          end
+    
+          it "should store user id in a session cookie to mark session as tracked" do
+            response.should_receive(:set_cookie).with(anything, hash_including(value: different_user_id))
+            Visit.track(tracker, request) { response }
+          end
         end
       end
     end
