@@ -2,9 +2,7 @@
 # ..ugly I know.
 
 require 'sinatra'
-require 'rack/motivoo'
-require 'motivoo/tracker'
-require 'motivoo/report'
+require 'motivoo'
 
 # Fake users along with their ids.
 #
@@ -13,6 +11,12 @@ users = {
   "jerry" => "2"
 }
 
+Motivoo.configure do |config|
+  config.mongo_host = "localhost"
+  config.define_cohort("app_version") do
+    "v1.0"
+  end
+end
 
 use Rack::Motivoo
 
@@ -57,9 +61,13 @@ __END__
         %li
           %a{href: "/"} Home
         %li
-          %a{href: "/signup"} Signup
+          %a{href: "/signup/tom"} Signup as Tom
         %li
-          %a{href: "/login"} Login
+          %a{href: "/signup/jerry"} Signup as Jerry
+        %li
+          %a{href: "/login/tom"} Login as Tom
+        %li
+          %a{href: "/login/jerry"} Login as Jerry
         %li
           %a{href: "/buy"} Buy
         %li
@@ -80,16 +88,33 @@ Login successful (#{@ext_user_id})!
 Thank you for your purchase.
 
 @@report
+= haml(:_report_for_category, locals: {title: "By day", category: :day}, layout: false)
+= haml(:_report_for_category, locals: {title: "By week", category: :week}, layout: false)
+= haml(:_report_for_category, locals: {title: "By month", category: :month}, layout: false)
+= haml(:_report_for_category, locals: {title: "By app version", category: :app_version}, layout: false)
+    
+@@_report_for_category
+%h1= locals[:title]
+
+%h2 The funnel 
+- first_visits = @report.acquisitions_by(locals[:category], :first_visit)
+%h3 Activation - signup
+= haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :signup, first_visits)})
+%h3 Activation - purchase
+= haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :buy, first_visits)})
+
+%h2 In absolute values
 %h3 Visits
-= haml(:_sub_report, locals: {entries: @report.acquisitions_by(:month, :visit)}, layout: false)
+= haml(:_report_for_status, locals: {entries: @report.acquisitions_by(locals[:category], :visit)}, layout: false)
 %h3 First visits
-= haml(:_sub_report, locals: {entries: @report.acquisitions_by(:month, :first_visit)}, layout: false)
+= haml(:_report_for_status, locals: {entries: @report.acquisitions_by(locals[:category], :first_visit)}, layout: false)
 %h3 Signups
-= haml(:_sub_report, locals: {entries: @report.activations_by(:month, :signup)}, layout: false)
+= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :signup)}, layout: false)
 %h3 Purchases
-= haml(:_sub_report, locals: {entries: @report.activations_by(:month, :buy)}, layout: false)
+= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :buy)}, layout: false)
+
           
-@@_sub_report
+@@_report_for_status
 %table
   - locals[:entries].to_a.sort {|l, r| l.first <=> r.first}.each do |(k, v)|
     %tr
