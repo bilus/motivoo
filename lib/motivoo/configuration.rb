@@ -1,6 +1,9 @@
 require_relative 'tracker'
 
 module Motivoo
+  
+  # Configurable settings.
+  #
   class Configuration
     attr_accessor :mongo_host
     attr_accessor :mongo_db
@@ -11,6 +14,12 @@ module Motivoo
     def initialize
       @mongo_host = "localhost"
       @mongo_db = "motivoo"
+    end
+
+    # Define a cohort.
+    #
+    def define_cohort(cohort_name, &block)
+      Tracker.define_cohort(cohort_name, &block)
     end
   end
 end
@@ -24,12 +33,6 @@ module Motivoo
   def configure
     self.configuration ||= Configuration.new
     yield(configuration)
-  end
-  
-  # Define a cohort.
-  #
-  def define_cohort(cohort_name, &block)
-    Tracker.define_cohort(cohort_name, &block)
   end
 end
 
