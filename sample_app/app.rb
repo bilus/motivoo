@@ -4,6 +4,8 @@
 require 'sinatra'
 require 'motivoo'
 
+enable :inline_templates
+
 # Fake users along with their ids.
 #
 users = {
@@ -73,10 +75,10 @@ __END__
     .body
       = yield
       
-@@ index
+@@index
 Home page
 
-@@ signup
+@@signup
 Signup successful (#{@ext_user_id})!
 
 @@login
