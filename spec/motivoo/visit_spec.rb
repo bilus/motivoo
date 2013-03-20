@@ -49,6 +49,11 @@ module Motivoo
           tracker.should_receive(:acquisition).with(:visit, hash_including(allow_repeated: true))
           Visit.track(tracker, request) { response }
         end
+        
+        it "should not track if block raises an error and pass the error" do
+          tracker.should_not_receive(:acquisition)
+          expect { Visit.track(tracker, request) { raise "Error." } }.to raise_error
+        end
       end
 
       context "when visit already tracked" do
