@@ -10,13 +10,39 @@ enable :inline_templates
 #
 users = {
   "tom" => "1",
-  "jerry" => "2"
+  "jerry" => "2",
+  "john" => "3"
 }
 
 Motivoo.configure do |config|
   config.mongo_host = "localhost"
   config.define_cohort("app_version") do
     "v1.0"
+  end
+  config.define_cohort("time_to_buy") do
+    nil
+  end
+  
+  config.before_acquisition do |status, env, tracker, user|
+    if status == :first_visit
+      user["first_visit_at"] = Time.now
+    end
+  end
+  
+  config.before_activation do |status, env, tracker, user|
+    if status == :buy
+      time_since_first_visit = Time.now - user["first_visit_at"]
+      ttb = 
+        if time_since_first_visit < 60
+          "< 1 minute"
+        elsif time_since_first_visit < 180
+          "< 3 minutes"
+        else
+          ">= 3 minutes"
+        end
+        
+      user.assign_to("time_to_buy", ttb)
+    end
   end
 end
 
@@ -65,9 +91,13 @@ __END__
         %li
           %a{href: "/signup/jerry"} Signup as Jerry
         %li
+          %a{href: "/signup/john"} Signup as John
+        %li
           %a{href: "/login/tom"} Login as Tom
         %li
           %a{href: "/login/jerry"} Login as Jerry
+        %li
+          %a{href: "/login/john"} Login as John
         %li
           %a{href: "/buy"} Buy
         %li
@@ -88,10 +118,25 @@ Login successful (#{@ext_user_id})!
 Thank you for your purchase.
 
 @@report
-= haml(:_report_for_category, locals: {title: "By day", category: :day}, layout: false)
-= haml(:_report_for_category, locals: {title: "By week", category: :week}, layout: false)
-= haml(:_report_for_category, locals: {title: "By month", category: :month}, layout: false)
-= haml(:_report_for_category, locals: {title: "By app version", category: :app_version}, layout: false)
+/= haml(:_report_for_category, locals: {title: "By day", category: :day}, layout: false)
+/= haml(:_report_for_category, locals: {title: "By week", category: :week}, layout: false)
+/= haml(:_report_for_category, locals: {title: "By month", category: :month}, layout: false)
+/= haml(:_report_for_category, locals: {title: "By app version", category: :app_version}, layout: false)
+= haml(:_report_for_time_to_buy, locals: {title: "By time to buy", category: :time_to_buy}, layout: false)
+    
+    
+    
+@@_report_for_time_to_buy
+%h1= locals[:title]
+
+%h2 The funnel 
+- buys = @report.activations_by(locals[:category], :buy)
+%h3 Purchases
+= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :buy)})
+
+%h3 % Signups
+= haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :signup, buys)})
+    
     
 @@_report_for_category
 %h1= locals[:title]

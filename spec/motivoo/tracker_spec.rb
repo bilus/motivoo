@@ -81,6 +81,14 @@ module Motivoo
         connection.should_receive(:track)
         at("2013-01-01 12:00") { track.call(allow_repeated: true) }
       end
+      
+      it "should not track nil cohorts" do
+        user_data.stub!(:cohorts).and_return({})
+        Tracker.stub!(:cohorts).and_return("seen_promotion" => lambda { nil })
+        user_data.should_not_receive(:assign_to).with("seen_promotion", nil)
+        user_data.should_not_receive(:track).with(anything, anything, "seen_promotion", nil)
+        at("2013-01-01 12:00") { track.call }
+      end
     end
   
     shared_examples_for("an exception-safe method") do
@@ -211,6 +219,16 @@ module Motivoo
         Tracker.before_activation(&skip)
         connection.should_not_receive(:track)
         tracker.activation(:signup)
+      end
+      
+      it "should not invoke before_activation if before_any skips" do
+        Tracker.before_any(&skip)
+        before_activation_called = false
+        Tracker.before_activation do
+          before_activation_called = true
+        end
+        tracker.activation(:signup)
+        before_activation_called.should be_false
       end
     end
   end

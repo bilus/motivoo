@@ -64,6 +64,13 @@ module Motivoo
         user_data.assign_to(cohort_name, cohort)
         user_data.cohorts[cohort_name].should == cohort
       end
+      
+      it "should raise an error if user already assigned" do
+        connection.stub!(:assign_cohort)
+        user_data.assign_to(cohort_name, cohort)
+        lambda { user_data.assign_to(cohort_name, "#{cohort}2") }.should raise_error
+        user_data.cohorts[cohort_name].should == cohort
+      end
     end
     
     context "when a user authenticates" do

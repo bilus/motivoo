@@ -152,13 +152,16 @@ module Motivoo
       Tracker.cohorts.each_pair do |cohort_name, proc|
         assigned_cohort = user_cohorts[cohort_name]
         cohort = assigned_cohort || proc.call
-
-        # TODO: Performance issue, each one is a separate HTTP call to the database server. Calls can be easily combined:
-        # @user_data.assign_to(cohort_name1: cohort1, cohort_name2: cohort2 ...)
-        # @connection.track(..array...)
-        # Arguments to these calls can be easily built using inject instead of each_pair above.
-        @user_data.assign_to(cohort_name, cohort) unless assigned_cohort
-        @connection.track(category.to_s, status.to_s, cohort_name, cohort)
+        
+        # When cohort is nil, it means that it shouldn't be tracked (usually, because it'll be set later into the funnel because it depends on some action of the user).
+        unless cohort.nil?
+          # TODO: Performance issue, each one is a separate HTTP call to the database server. Calls can be easily combined:
+          # @user_data.assign_to(cohort_name1: cohort1, cohort_name2: cohort2 ...)
+          # @connection.track(..array...)
+          # Arguments to these calls can be easily built using inject instead of each_pair above.
+          @user_data.assign_to(cohort_name, cohort) unless assigned_cohort
+          @connection.track(category.to_s, status.to_s, cohort_name, cohort)
+        end
       end
     end
     
@@ -169,6 +172,7 @@ module Motivoo
       end
 
       def skip!
+        puts "skip!"
         @skip = true
       end
       
@@ -180,9 +184,13 @@ module Motivoo
     def invoke_before_callbacks(category, status)
       before_any = @@callbacks[:before_any]
       result_for_any = invoke_callback(before_any, status)
-      result = invoke_callback(find_callback(category), status)
-      result.skip! if result_for_any.skip?
-      result
+      if result_for_any.skip?
+        result_for_any
+      else
+        result = invoke_callback(find_callback(category), status)
+        result.skip! if result_for_any.skip?
+        result
+      end
     end
     
     def find_callback(category)

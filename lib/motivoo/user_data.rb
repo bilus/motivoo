@@ -39,6 +39,7 @@ module Motivoo
     # Assigns the current user to a cohort.
     #
     def assign_to(cohort_name, cohort)
+      raise "User already assigned (#{cohort_name.inspect})" if @cohorts[cohort_name]
       @connection.assign_cohort(@user_id, cohort_name, cohort)
       @cohorts.store(cohort_name, cohort)
     end
@@ -54,7 +55,7 @@ module Motivoo
     def set_ext_user_id(ext_user_id)
       # puts "set_ext_user_id(#{ext_user_id.inspect}) <-- @ext_user_id = #{@ext_user_id.inspect} -- @user_id = #{@user_id.inspect} -- @cohorts = #{@cohorts.inspect}"
       return if @ext_user_id == ext_user_id
-      
+
       if ext_user_id.nil?
         @cohorts = {}
         @user_id = @connection.generate_user_id
@@ -94,12 +95,15 @@ module Motivoo
     #
     def [](key)
       # TODO: Cache it?
-      @connection.get_user_data(@user_id, key)
+      value = @connection.get_user_data(@user_id, key)
+      # puts "#{@user_id} [](#{key.inspect}) => #{value.inspect}"
+      value
     end
     
     # Sets a user-defined user data field.
     #
     def []=(key, value)
+      # puts "#{@user_id} []=(#{key.inspect}, #{value.inspect})"
       # TODO ext_user_id can be set directly by the user bypassing code in UserData#set_ext_user_id
       @connection.set_user_data(@user_id, key => value)
     end
