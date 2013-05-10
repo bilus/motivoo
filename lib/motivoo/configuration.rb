@@ -25,7 +25,7 @@ module Motivoo
     end
     
     def method_missing(meth, *args, &block)
-      if meth.to_s =~ /^(before_.+)$/ || meth.to_s =~ /^(after_.+)$/
+      if meth.to_s =~ /^(before_.+)$/ || meth.to_s =~ /^(after_.+)$/ || meth.to_s =~ /^(on_.+)$/
         Tracker.send($1.to_sym, *args, &block)
       else
         super
@@ -33,7 +33,7 @@ module Motivoo
     end
   
     def respond_to?(meth)
-      if meth.to_s =~ /^(before_.+)$/ || meth.to_s =~ /^(after_.+)$/
+      if meth.to_s =~ /^(before_.+)$/ || meth.to_s =~ /^(after_.+)$/ || meth.to_s =~ /^(on_.+)$/
         true
       else
         super

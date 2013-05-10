@@ -16,22 +16,18 @@ users = {
 
 Motivoo.configure do |config|
   config.mongo_host = "localhost"
+  
   config.define_cohort("app_version") do
     "v1.0"
   end
+  
   config.define_cohort("time_to_buy") do
     nil
   end
   
-  config.before_acquisition do |status, env, tracker, user|
-    if status == :first_visit
-      user["first_visit_at"] = Time.now
-    end
-  end
-  
   config.before_activation do |status, env, tracker, user|
     if status == :buy
-      time_since_first_visit = Time.now - user["first_visit_at"]
+      time_since_first_visit = Time.now - user.first_visit_at
       ttb = 
         if time_since_first_visit < 60
           "< 1 minute"
@@ -42,6 +38,22 @@ Motivoo.configure do |config|
         end
         
       user.assign_to("time_to_buy", ttb)
+    end
+  end
+
+  TWO_MINUTES = 2 * 60
+  FIVE_MINUTES = 5 * 60
+  
+  config.on_repeat_visit do |tracker, user|
+    puts "on_repeat_visit #{user.inspect}"
+    time_since_first_visit = Time.now - user.first_visit_at
+    if time_since_first_visit > TWO_MINUTES
+      puts "retention :back_after_two_minutes"
+      tracker.retention(:back_after_two_minutes)
+    end
+    if time_since_first_visit > FIVE_MINUTES
+      puts "retention :back_after_five_minutes"
+      tracker.retention(:back_after_five_minutes)
     end
   end
 end
@@ -64,6 +76,7 @@ get "/login/:user" do
   tracker = Motivoo::Tracker.deserialize_from(request.env)
   @ext_user_id = users[params[:user]]
   tracker.set_ext_user_id(@ext_user_id)
+  tracker.activation(:login)
   haml :login
 end
 
@@ -118,10 +131,11 @@ Login successful (#{@ext_user_id})!
 Thank you for your purchase.
 
 @@report
-/= haml(:_report_for_category, locals: {title: "By day", category: :day}, layout: false)
+/ = haml(:_report_for_category, locals: {title: "By day", category: :day}, layout: false)
 /= haml(:_report_for_category, locals: {title: "By week", category: :week}, layout: false)
 /= haml(:_report_for_category, locals: {title: "By month", category: :month}, layout: false)
 /= haml(:_report_for_category, locals: {title: "By app version", category: :app_version}, layout: false)
+
 = haml(:_report_for_time_to_buy, locals: {title: "By time to buy", category: :time_to_buy}, layout: false)
     
     
@@ -134,6 +148,8 @@ Thank you for your purchase.
 %h3 Purchases
 = haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :buy)})
 
+%h3 # Signups
+= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :signup)})
 %h3 % Signups
 = haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :signup, buys)})
     
@@ -143,10 +159,16 @@ Thank you for your purchase.
 
 %h2 The funnel 
 - first_visits = @report.acquisitions_by(locals[:category], :first_visit)
+%h3 First visits
+= haml(:_report_for_status, locals: {entries: @report.acquisitions_by(locals[:category], :first_visit)}, layout: false)
 %h3 Activation - signup
 = haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :signup, first_visits)})
 %h3 Activation - purchase
 = haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :buy, first_visits)})
+%h3 Retention - back after 2 minutes
+= haml(:_report_for_status, locals: {entries: @report.relative_retentions_by(locals[:category], :back_after_two_minutes, first_visits)})
+%h3 Retention - back after 5 minutes
+= haml(:_report_for_status, locals: {entries: @report.relative_retentions_by(locals[:category], :back_after_five_minutes, first_visits)})
 
 %h2 In absolute values
 %h3 Visits

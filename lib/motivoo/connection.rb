@@ -100,6 +100,13 @@ module Motivoo
       @user_data.remove("_id" => BSON::ObjectId(user_id))
     end
     
+    # Time of the user record creation time.
+    #
+    def user_data_created_at(user_id)
+      BSON::ObjectId(user_id).generation_time
+    end
+    
+    
     # Testing
 
     # Removes all tables and indices.

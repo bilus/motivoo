@@ -7,17 +7,18 @@ module Motivoo
   class UserData
     USER_ID_COOKIE = "_muid"
     EXT_USER_ID_KEY = "ext_user_id"
+    COHORTS_KEY = "cohorts"
    
     # Creates a UserData instance based on a Rack env.
     #
     def self.deserialize_from(env, connection)
-      user_id, user_data = 
+      user_id, user_data, is_existing_user = 
         if (existing_user_id = Rack::Request.new(env).cookies[USER_ID_COOKIE])
-          [existing_user_id, connection.find_or_create_user_data(existing_user_id)]
+          [existing_user_id, connection.find_or_create_user_data(existing_user_id), true]
         else
-          [connection.generate_user_id, {}]
+          [connection.generate_user_id, {}, false]
         end
-      UserData.new(user_id, user_data, connection)
+      [UserData.new(user_id, user_data, connection), is_existing_user]
     end
     
     # Updates Rack::Response to facilitate user tracking.
@@ -26,13 +27,12 @@ module Motivoo
       response.set_cookie(USER_ID_COOKIE, value: @user_id, path: "/", expires: Time.now + 3 * 30 * 24 * 60 * 60)
     end
 
-
     # Creates a UserData instance.
     #
     def initialize(user_id, hash, connection)
       @user_id = user_id
       @ext_user_id = hash[EXT_USER_ID_KEY]
-      @cohorts = hash["cohorts"] || {}
+      @cohorts = hash[COHORTS_KEY] || {}
       @connection = connection
     end
     
@@ -64,7 +64,7 @@ module Motivoo
       
         if user_id
           @connection.destroy_user_data(@user_id) if @ext_user_id.nil?
-          @cohorts = user_data["cohorts"]
+          @cohorts = user_data[COHORTS_KEY]
           @user_id = user_id
         elsif @ext_user_id.nil?
           @connection.set_user_data(@user_id, EXT_USER_ID_KEY => ext_user_id)
@@ -89,6 +89,11 @@ module Motivoo
     #
     def user_id
       @user_id
+    end
+    
+    # Time of the user's first visit.
+    def first_visit_at
+      @connection.user_data_created_at(@user_id)
     end
     
     # Returns a user-defined user data field.

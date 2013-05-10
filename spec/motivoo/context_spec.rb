@@ -12,7 +12,7 @@ module Motivoo
       
       let!(:user_data) do
         user_data = mock("user_data")
-        UserData.stub!(:deserialize_from).and_return(user_data)
+        UserData.stub!(:deserialize_from).and_return([user_data, true])
         user_data
       end
       
@@ -43,13 +43,20 @@ module Motivoo
         Context.create(env)
       end
       
-      it "should create user data" do
-        UserData.should_receive(:deserialize_from).with(env, connection).and_return(user_data)
+      it "should deserialize user data" do
+        UserData.should_receive(:deserialize_from).with(env, connection).and_return([user_data, true])
         Context.create(env)
       end
       
       it "should create tracker" do
-        Tracker.should_receive(:new).with(user_data, connection).and_return(tracker)
+        Tracker.should_receive(:new).with(user_data, connection, anything).and_return(tracker)
+        Context.create(env)
+      end
+      
+      it "should inform tracker whether the user is an existing one" do
+        existing_user = double("existing_user_flag")
+        UserData.stub!(:deserialize_from).and_return([user_data, existing_user])
+        Tracker.should_receive(:new).with(anything, anything, existing_user: existing_user).and_return(tracker)
         Context.create(env)
       end
       

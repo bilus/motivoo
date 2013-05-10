@@ -32,9 +32,10 @@ module Motivoo
     
     # Creates a tracker.
     #
-    def initialize(user_data, connection)
+    def initialize(user_data, connection, options = {})
       @connection = connection
       @user_data = user_data
+      invoke_repeat_visit_callback if options[:existing_user]
     end
     
     HASH_KEY = "motivoo.tracker"
@@ -57,7 +58,9 @@ module Motivoo
     # This id is not visible in the cookies.
     #
     def set_ext_user_id(ext_user_id)
+      old_user_id = @user_data.user_id
       @user_data.set_ext_user_id(ext_user_id)
+      invoke_repeat_visit_callback if @user_data.user_id != old_user_id
     end
     
     # Internal id of the currently tracked user.
@@ -93,7 +96,7 @@ module Motivoo
         end
       end
       
-      # Callbacks envoked before an event is tracked in a given category.
+      # Callbacks invoked before an event is tracked in a given category.
       #
       # @example
       #   Tracker.before_activation { }
@@ -125,11 +128,16 @@ module Motivoo
         @@callbacks["before_#{category.to_s}".to_sym] = callback
       end
     end
-    
+
+    # Callback invoked before any event is tracked.
     def Tracker.before_any(&callback)
       @@callbacks[:before_any] = callback
     end
     
+    # Callback invoked for every repeat visit (actually, every repeat HTTP request) of the same user.
+    def Tracker.on_repeat_visit(&callback)
+      @@callbacks[:on_repeat_visit] = callback
+    end
     
     private
 
@@ -172,7 +180,6 @@ module Motivoo
       end
 
       def skip!
-        puts "skip!"
         @skip = true
       end
       
@@ -200,6 +207,11 @@ module Motivoo
     def invoke_callback(callback, status)
       block = (callback || lambda {|*args| })
       CallbackContext.new(status, @env, self, @user_data, &block)
-    end    
+    end   
+    
+    def invoke_repeat_visit_callback
+      callback = @@callbacks[:on_repeat_visit]
+      callback.call(self, @user_data) if callback
+    end 
   end
 end

@@ -15,7 +15,7 @@ module Motivoo
     before(:each) do
       user_data.stub!(:[]).and_return(nil)
     end
-  
+    
     context "when serializing into hash" do
       it "should return hash with an entry pointing to itself" do
         tracker.serialize_into({}).should == {"motivoo.tracker" => tracker}
@@ -231,5 +231,48 @@ module Motivoo
         before_activation_called.should be_false
       end
     end
+    
+    context "[repeat visit callback]" do
+      let(:callback) { mock_event_handler }
+  
+      before(:each) do 
+        Tracker.on_repeat_visit(&callback)
+      end
+  
+      after(:each) do
+        Tracker.on_repeat_visit {}
+      end
+
+      context "when it is created" do
+        it "should invoke the callback for existing user" do
+          callback.should_receive(:call).with(kind_of(Tracker), user_data)
+          Tracker.new(user_data, connection, existing_user: true)
+        end
+
+        it "should not invoke the callback for new user" do
+          callback.should_not_receive(:call)
+          Tracker.new(user_data, connection, existing_user: false)
+        end
+      end
+
+      context "when external user id is set" do
+        let(:ext_user_id) { "ext_user_id" }
+      
+        it "should invoke the callback whenever it changes user id" do
+          id1 = "id1"
+          id2 = "id2"
+          user_data.stub!(:user_id).and_return(id1, id2)
+          callback.should_receive(:call).with(tracker, user_data)
+          tracker.set_ext_user_id(ext_user_id)
+        end
+
+        it "should not invoke the callback for unchanged user id" do
+          id = "id"
+          user_data.stub!(:user_id).and_return(id, id)
+          callback.should_not_receive(:call)
+          tracker.set_ext_user_id(ext_user_id)
+        end
+      end
+    end    
   end
 end
