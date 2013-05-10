@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    motivoo (0.3.7)
+    motivoo (0.5)
       bson_ext
       mongo
       rack

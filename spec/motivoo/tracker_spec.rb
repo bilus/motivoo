@@ -274,5 +274,19 @@ module Motivoo
         end
       end
     end    
+    
+    context "when asked to act as a user" do
+      let(:ext_user_id) { "ext_user_id" }
+      
+      it "should load user data based on the external user id and use it thereafter" do
+        user_data.should_receive(:set_ext_user_id).with(ext_user_id)
+        tracker.act_as!(ext_user_id)
+      end
+
+      it "should return self" do
+        user_data.stub!(:set_ext_user_id)
+        tracker.act_as!(ext_user_id).should == tracker
+      end
+    end
   end
 end

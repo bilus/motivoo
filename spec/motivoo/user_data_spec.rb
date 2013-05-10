@@ -208,9 +208,7 @@ module Motivoo
               user_data.ext_user_id.should == other_ext_user_id
             end
           end
-          
         end
-        
       end
     end
     

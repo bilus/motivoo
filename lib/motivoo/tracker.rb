@@ -63,6 +63,16 @@ module Motivoo
       invoke_repeat_visit_callback if @user_data.user_id != old_user_id
     end
     
+    # Switches to user based on external user id. Allows to act on behalf on another user.
+    # It doesn't trigger on_repeat_visit callback.
+    #
+    def act_as!(ext_user_id)
+      puts "act_as! #{ext_user_id} old user_id #{@user_data.user_id}"
+      @user_data.set_ext_user_id(ext_user_id)
+      puts "new user_id #{@user_data.user_id}"
+      self
+    end
+    
     # Internal id of the currently tracked user.
     # Note: It's not the same as external user id set by a call to set_ext_user_id!
     #
