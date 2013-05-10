@@ -61,14 +61,11 @@ Motivoo.configure do |config|
   FIVE_MINUTES = 5 * 60
   
   config.on_repeat_visit do |tracker, user|
-    puts "on_repeat_visit #{user.inspect}"
     time_since_first_visit = Time.now - user.first_visit_at
     if time_since_first_visit > TWO_MINUTES
-      puts "retention :back_after_two_minutes"
       tracker.retention(:back_after_two_minutes)
     end
     if time_since_first_visit > FIVE_MINUTES
-      puts "retention :back_after_five_minutes"
       tracker.retention(:back_after_five_minutes)
     end
   end
