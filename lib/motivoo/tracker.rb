@@ -67,9 +67,7 @@ module Motivoo
     # It doesn't trigger on_repeat_visit callback.
     #
     def act_as!(ext_user_id)
-      puts "act_as! #{ext_user_id} old user_id #{@user_data.user_id}"
       @user_data.set_ext_user_id(ext_user_id)
-      puts "new user_id #{@user_data.user_id}"
       self
     end
     
