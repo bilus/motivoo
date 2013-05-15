@@ -38,6 +38,12 @@ module Motivoo
       invoke_repeat_visit_callback if options[:existing_user]
     end
     
+    def initialize_copy(_)
+      super
+      @env = if @env then @env.clone end
+      @user_data = @user_data.clone
+    end
+    
     HASH_KEY = "motivoo.tracker"
     
     # Injects itself into the env hash (used internally to store a Tracker object in Rack env).
@@ -63,12 +69,11 @@ module Motivoo
       invoke_repeat_visit_callback if @user_data.user_id != old_user_id
     end
     
-    # Switches to user based on external user id. Allows to act on behalf on another user.
+    # Returns copy of the tracker switched to user based on external user id. Allows to act on behalf on another user.
     # It doesn't trigger on_repeat_visit callback.
     #
-    def act_as!(ext_user_id)
-      @user_data.set_ext_user_id(ext_user_id)
-      self
+    def act_as(ext_user_id)
+      self.clone.act_as!(ext_user_id)
     end
     
     # Internal id of the currently tracked user.
@@ -221,5 +226,12 @@ module Motivoo
       callback = @@callbacks[:on_repeat_visit]
       callback.call(self, @user_data) if callback
     end 
+    
+    protected
+    
+    def act_as!(ext_user_id)
+      @user_data.set_ext_user_id(ext_user_id)
+      self
+    end
   end
 end

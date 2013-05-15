@@ -105,7 +105,7 @@ end
 
 get "/contact/:user" do
   tracker = Motivoo::Tracker.deserialize_from(request.env)
-  tracker.act_as!(users[params[:user]])
+  tracker.act_as(users[params[:user]])
   tracker.activation(:contact)
   haml :contact
 end

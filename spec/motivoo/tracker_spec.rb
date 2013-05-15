@@ -277,15 +277,38 @@ module Motivoo
     
     context "when asked to act as a user" do
       let(:ext_user_id) { "ext_user_id" }
+      let(:new_user_data) { mock("new_user_data") }
+      let(:callback) { mock_event_handler }
       
-      it "should load user data based on the external user id and use it thereafter" do
-        user_data.should_receive(:set_ext_user_id).with(ext_user_id)
-        tracker.act_as!(ext_user_id)
+      before(:each) do
+        UserData.stub!(:new).and_return(new_user_data)
+        Tracker.before_acquisition(&callback)
+      end
+    
+      after(:each) do
+        Tracker.before_acquisition {}
+      end
+      
+      it "should return a different tracker instance" do
+        new_user_data.stub!(:set_ext_user_id)
+        tracker.act_as(ext_user_id).should_not == tracker
       end
 
-      it "should return self" do
-        user_data.stub!(:set_ext_user_id)
-        tracker.act_as!(ext_user_id).should == tracker
+      it "should use new user data" do
+        user_data.should_not_receive(:set_ext_user_id).with(ext_user_id)
+        user_data.should_receive(:clone).and_return(new_user_data)
+        new_user_data.should_receive(:set_ext_user_id).with(ext_user_id)
+        tracker.act_as(ext_user_id)
+      end
+
+      it "should create a copy of env" do
+        original_env = tracker.serialize_into({})
+        Tracker.deserialize_from(original_env).should == tracker
+        callback.should_receive(:call) do |_status, env, *_args|
+          env.should be_a(Hash)
+          env.should_not == original_env
+        end
+        tracker.act_as(ext_user_id).acquisition(:visit)
       end
     end
   end

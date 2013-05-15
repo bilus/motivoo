@@ -36,6 +36,11 @@ module Motivoo
       @connection = connection
     end
     
+    def initialize_copy(_)
+      self
+      @cohorts = @cohorts.clone
+    end
+    
     # Assigns the current user to a cohort.
     #
     def assign_to(cohort_name, cohort)
