@@ -5,18 +5,19 @@ module Motivoo
   # Event tracking.
   #
   class Tracker
-    
-    @@callbacks = {}
-    
-    @@cohorts = {
+
+    DEFAULT_COHORTS = {
       "day" => lambda { Date.today.strftime("%Y-%m-%d") },
       "month" => lambda { Date.today.strftime("%Y-%m") },
       "week" => lambda { date = Date.today; "#{date.year}(#{date.cweek})" }
     }
     
+    @@callbacks = {}
+    @@cohorts = DEFAULT_COHORTS
+    
     # Returns defined cohorts.
     #
-    def self.cohorts
+    def Tracker.cohorts
       @@cohorts
     end
     
@@ -25,7 +26,7 @@ module Motivoo
     # @example
     #   Tracker.define_cohort("release") { "1.0.2" }
     #
-    def self.define_cohort(name, &block)
+    def Tracker.define_cohort(name, &block)
       raise "Cohort #{name} already defined." if @@cohorts.member?(name)
       @@cohorts[name] = block
     end
@@ -55,7 +56,7 @@ module Motivoo
     
     # Returns a Tracker instance from the env hash (used internally with Rack env).
     #
-    def self.deserialize_from(env)
+    def Tracker.deserialize_from(env)
       env[HASH_KEY] or raise "Tracker couldn't be found in the hash. Internal error."
     end
     
@@ -150,6 +151,12 @@ module Motivoo
     # Callback invoked for every repeat visit (actually, every repeat HTTP request) of the same user.
     def Tracker.on_repeat_visit(&callback)
       @@callbacks[:on_repeat_visit] = callback
+    end
+    
+    # Removes a cohort. Doesn't delete the corresponding data from the database.
+    # For testing purposes only.
+    def Tracker.remove_cohort!(category)
+      @@cohorts.delete(category)
     end
     
     private
