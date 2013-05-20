@@ -7,9 +7,11 @@ module Motivoo
   class Tracker
 
     DEFAULT_COHORTS = {
-      "day" => lambda { Date.today.strftime("%Y-%m-%d") },
-      "month" => lambda { Date.today.strftime("%Y-%m") },
-      "week" => lambda { date = Date.today; "#{date.year}(#{date.cweek})" }
+      # Note: 'today' method is provided by Tracker. Use it instead of Date.today to make it possible for tracker to track events
+      # on a different date than the current one.
+      "day" => lambda { today.strftime("%Y-%m-%d") },
+      "month" => lambda { today.strftime("%Y-%m") },
+      "week" => lambda { date = today; "#{date.year}(#{date.cweek})" }
     }
     
     @@callbacks = {}
@@ -36,6 +38,7 @@ module Motivoo
     def initialize(user_data, connection, options = {})
       @connection = connection
       @user_data = user_data
+      @env = {}
       invoke_repeat_visit_callback if options[:existing_user]
     end
     
@@ -94,15 +97,17 @@ module Motivoo
       #
       define_method(category) do |status, options = {}|
         # puts "#{category.to_s}(#{status.inspect}) -- @user_data = #{@user_data.inspect}"
-        allow_repeated = options.delete(:allow_repeated)
-        raise "Unrecognized option(s): #{options.keys.join(', ')}." unless options.empty?
+        opts = options.dup
+        allow_repeated = opts.delete(:allow_repeated)
+        on_date = opts.delete(:on_date)
+        raise "Unrecognized option(s): #{options.keys.join(', ')}." unless opts.empty?
         
         begin
           if allow_repeated
-            do_track(category, status)
+            do_track(category, status, on_date)
           else
             ensure_track_once(category, status) do
-              do_track(category, status)
+              do_track(category, status, on_date)
             end
           end
         rescue => e
@@ -172,14 +177,32 @@ module Motivoo
       end
     end
     
-    def do_track(category, status)
+    class CohortContext
+      def initialize(*args)
+        @args = args
+      end
+      
+      def run(&block)
+        instance_exec(*@args, &block)
+      end
+      
+      def today=(date)
+        @today_override = date
+      end
+      
+      def today
+        @today_override || Date.today
+      end
+    end
+    
+    def do_track(category, status, date_override = nil)
       callback_result = invoke_before_callbacks(category, status)
       return if callback_result.skip?
       
       user_cohorts = @user_data.cohorts
-      Tracker.cohorts.each_pair do |cohort_name, proc|
+      Tracker.cohorts.each_pair do |cohort_name, generator|
         assigned_cohort = user_cohorts[cohort_name]
-        cohort = assigned_cohort || proc.call
+        cohort = assigned_cohort || generate_cohort(generator, date_override)
         
         # When cohort is nil, it means that it shouldn't be tracked (usually, because it'll be set later into the funnel because it depends on some action of the user).
         unless cohort.nil?
@@ -194,9 +217,14 @@ module Motivoo
     end
     
     class CallbackContext
-      def initialize(*args, &block)
+      def initialize(*args)
+        @args = args
         @skip = false
-        instance_exec(*args, &block)
+      end
+      
+      def run(&block)
+        instance_exec(*@args, &block)
+        self
       end
 
       def skip!
@@ -226,7 +254,7 @@ module Motivoo
     
     def invoke_callback(callback, status)
       block = (callback || lambda {|*args| })
-      CallbackContext.new(status, @env, self, @user_data, &block)
+      CallbackContext.new(status, @env, self, @user_data).run(&block)
     end   
     
     def invoke_repeat_visit_callback
@@ -239,6 +267,12 @@ module Motivoo
     def act_as!(ext_user_id)
       @user_data.set_ext_user_id(ext_user_id)
       self
+    end
+    
+    def generate_cohort(generator, date_override = nil)
+      ctx = CohortContext.new
+      ctx.today = date_override if date_override
+      ctx.run(&generator)
     end
   end
 end

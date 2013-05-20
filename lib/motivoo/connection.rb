@@ -71,6 +71,14 @@ module Motivoo
       @user_data.insert({}).to_s
     end
     
+    # Inserts a user data object, making sure first_visit_at is set to the provided time.
+    #
+    def create_user_data_with_first_visit_at(first_visit_at)
+      user_id = BSON::ObjectId.from_time(first_visit_at).to_s
+      find_or_create_user_data(user_id)
+      user_id
+    end
+    
     # Assigns a user to a cohort.
     #
     def assign_cohort(user_id, cohort_name, cohort)

@@ -11,7 +11,7 @@ module Motivoo
    
     # Creates a UserData instance based on a Rack env.
     #
-    def self.deserialize_from(env, connection)
+    def UserData.deserialize_from(env, connection)
       user_id, user_data, is_existing_user = 
         if (existing_user_id = Rack::Request.new(env).cookies[USER_ID_COOKIE])
           [existing_user_id, connection.find_or_create_user_data(existing_user_id), true]
@@ -26,6 +26,21 @@ module Motivoo
     def serialize_into(response)
       response.set_cookie(USER_ID_COOKIE, value: @user_id, path: "/", expires: Time.now + 3 * 30 * 24 * 60 * 60)
     end
+    
+    # Support for importing existing users (untracked) into motivoo.
+    #
+    def UserData.add_legacy_user(opts, connection)
+      user_id =
+        if first_visit_at = opts[:first_visit_at]
+          connection.create_user_data_with_first_visit_at(first_visit_at)
+        else
+          connection.generate_user_id
+        end
+      user_data = UserData.new(user_id, {}, connection)
+      user_data.set_ext_user_id(opts[:ext_user_id]) if opts[:ext_user_id]
+      user_data
+    end
+    
 
     # Creates a UserData instance.
     #

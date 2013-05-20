@@ -311,5 +311,19 @@ module Motivoo
         tracker.act_as(ext_user_id).acquisition(:visit)
       end
     end
+    
+    context "when asked to simulate tracking on a different date" do
+      let(:month_cohort) { "2012-12" }
+      let(:week_cohort) { "2012(50)" }
+      let(:day_cohort) { "2012-12-10" }
+
+      it "should assign to the correct cohort" do
+        user_data.stub!(:cohorts).and_return({})
+        user_data.should_receive(:assign_to).with("day", day_cohort)
+        user_data.should_receive(:assign_to).with("week", week_cohort)
+        user_data.should_receive(:assign_to).with("month", month_cohort)
+        tracker.acquisition(:visit, on_date: Time.parse("2012-12-10").to_date)
+      end
+    end
   end
 end
