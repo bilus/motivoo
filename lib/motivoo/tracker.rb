@@ -95,8 +95,8 @@ module Motivoo
       #   tracker.activation(:signup)
       # tracks a signup of the current user.
       #
-      define_method(category) do |status, options = {}|
-        # puts "#{category.to_s}(#{status.inspect}) -- @user_data = #{@user_data.inspect}"
+      define_method(category) do |event, options = {}|
+        # puts "#{category.to_s}(#{event.inspect}) -- @user_data = #{@user_data.inspect}"
         opts = options.dup
         allow_repeated = opts.delete(:allow_repeated)
         on_date = opts.delete(:on_date)
@@ -104,10 +104,10 @@ module Motivoo
         
         begin
           if allow_repeated
-            do_track(category, status, on_date)
+            do_track(category, event, on_date)
           else
-            ensure_track_once(category, status) do
-              do_track(category, status, on_date)
+            ensure_track_once(category, event) do
+              do_track(category, event, on_date)
             end
           end
         rescue => e
@@ -124,7 +124,7 @@ module Motivoo
       # In addition, before_any is invoked for any category in addition to the category-specific handler.
       #
       # Arguments passed to the callback block:
-      #   status - the status (e.g. :visit),
+      #   event - the event (e.g. :visit),
       #   env - the env hash,
       #   tracker - Tracker instance,
       #   user_data - UserData instance.
@@ -136,8 +136,8 @@ module Motivoo
       # IMPORTANT: Only one callback per category is currently supported.
       #
       # @example
-      #   Tracker.before_acquisition { |status, | puts status }
-      # will trace status for each acquisition.
+      #   Tracker.before_acquisition { |event, | puts event }
+      # will trace event for each acquisition.
       #
       # Following this with:
       #   Tracker.before_acquisition {}
@@ -166,8 +166,8 @@ module Motivoo
     
     private
 
-    def ensure_track_once(category, status)
-      key = "#{category.to_s}##{status.to_s}"
+    def ensure_track_once(category, event)
+      key = "#{category.to_s}##{event.to_s}"
       # puts "ensure_track_once key = #{key.inspect} #{@user_data.inspect}"
       already_tracked = @user_data[key]
       # puts "already_tracked? #{already_tracked.inspect}"
@@ -195,8 +195,8 @@ module Motivoo
       end
     end
     
-    def do_track(category, status, date_override = nil)
-      callback_result = invoke_before_callbacks(category, status)
+    def do_track(category, event, date_override = nil)
+      callback_result = invoke_before_callbacks(category, event)
       return if callback_result.skip?
       
       if @user_data.cohorts.empty?
@@ -213,7 +213,7 @@ module Motivoo
           # @user_data.assign_to(cohort_category1: cohort1, cohort_category2: cohort2 ...)
           # @connection.track(..array...)
           # Arguments to these calls can be easily built using inject instead of each_pair above.
-          @connection.track(category.to_s, status.to_s, cohort_category, cohort)
+          @connection.track(category.to_s, event.to_s, cohort_category, cohort)
         end
       end
     end
@@ -238,13 +238,13 @@ module Motivoo
       end
     end
     
-    def invoke_before_callbacks(category, status)
+    def invoke_before_callbacks(category, event)
       before_any = @@callbacks[:before_any]
-      result_for_any = invoke_callback(before_any, status)
+      result_for_any = invoke_callback(before_any, event)
       if result_for_any.skip?
         result_for_any
       else
-        result = invoke_callback(find_callback(category), status)
+        result = invoke_callback(find_callback(category), event)
         result.skip! if result_for_any.skip?
         result
       end
@@ -254,9 +254,9 @@ module Motivoo
       @@callbacks["before_#{category.to_s}".to_sym]
     end
     
-    def invoke_callback(callback, status)
+    def invoke_callback(callback, event)
       block = (callback || lambda {|*args| })
-      CallbackContext.new(status, @env, self, @user_data).run(&block)
+      CallbackContext.new(event, @env, self, @user_data).run(&block)
     end   
     
     def invoke_repeat_visit_callback

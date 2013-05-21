@@ -20,9 +20,9 @@ module Rack
         
       ::Motivoo::Context.create(env) do |tracker, request|
         ::Motivoo::Visit.track(tracker, request) do |tracker, request|
-          status, headers, body = @app.call(request.env)
+          event, headers, body = @app.call(request.env)
 
-          response = Response.new(body, status, headers)
+          response = Response.new(body, event, headers)
           response  # tracker created user data and calls serialize_into(response) and response.finish
         end
       end

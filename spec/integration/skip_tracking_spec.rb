@@ -14,7 +14,7 @@ describe "Skipping tracking" do
   
   before(:all) do
     Motivoo.configure do |config|
-      config.before_acquisition do |status, env|
+      config.before_acquisition do |event, env|
         skip! if env["PATH_INFO"] == "/"
       end
     end

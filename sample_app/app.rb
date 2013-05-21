@@ -29,8 +29,8 @@ Motivoo.configure do |config|
     nil
   end
   
-  config.before_activation do |status, env, tracker, user|
-    case status
+  config.before_activation do |event, env, tracker, user|
+    case event
     when :buy
       time_since_first_visit = Time.now - user.first_visit_at
       ttb = 
@@ -182,12 +182,12 @@ User has been contacted!
 %h2 The funnel 
 - buys = @report.activations_by(locals[:category], :buy)
 %h3 Purchases
-= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :buy)})
+= haml(:_report_for_event, locals: {entries: @report.activations_by(locals[:category], :buy)})
 
 %h3 # Signups
-= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :signup)})
+= haml(:_report_for_event, locals: {entries: @report.activations_by(locals[:category], :signup)})
 %h3 % Signups
-= haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :signup, buys)})
+= haml(:_report_for_event, locals: {entries: @report.relative_activations_by(locals[:category], :signup, buys)})
     
 @@_report_for_time_to_contact
 %h1= locals[:title]
@@ -195,12 +195,12 @@ User has been contacted!
 %h2 The funnel 
 - contacts = @report.activations_by(locals[:category], :contact)
 %h3 Contacts
-= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :contact)})
+= haml(:_report_for_event, locals: {entries: @report.activations_by(locals[:category], :contact)})
 
 %h3 # Signups
-= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :signup)})
+= haml(:_report_for_event, locals: {entries: @report.activations_by(locals[:category], :signup)})
 %h3 % Signups
-= haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :signup, contacts)})
+= haml(:_report_for_event, locals: {entries: @report.relative_activations_by(locals[:category], :signup, contacts)})
     
     
 @@_report_for_category
@@ -209,30 +209,30 @@ User has been contacted!
 %h2 The funnel 
 - first_visits = @report.acquisitions_by(locals[:category], :first_visit)
 %h3 First visits
-= haml(:_report_for_status, locals: {entries: @report.acquisitions_by(locals[:category], :first_visit)}, layout: false)
+= haml(:_report_for_event, locals: {entries: @report.acquisitions_by(locals[:category], :first_visit)}, layout: false)
 %h3 Activation - contact
-= haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :contact, first_visits)})
+= haml(:_report_for_event, locals: {entries: @report.relative_activations_by(locals[:category], :contact, first_visits)})
 %h3 Activation - signup
-= haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :signup, first_visits)})
+= haml(:_report_for_event, locals: {entries: @report.relative_activations_by(locals[:category], :signup, first_visits)})
 %h3 Activation - purchase
-= haml(:_report_for_status, locals: {entries: @report.relative_activations_by(locals[:category], :buy, first_visits)})
+= haml(:_report_for_event, locals: {entries: @report.relative_activations_by(locals[:category], :buy, first_visits)})
 %h3 Retention - back after 2 minutes
-= haml(:_report_for_status, locals: {entries: @report.relative_retentions_by(locals[:category], :back_after_two_minutes, first_visits)})
+= haml(:_report_for_event, locals: {entries: @report.relative_retentions_by(locals[:category], :back_after_two_minutes, first_visits)})
 %h3 Retention - back after 5 minutes
-= haml(:_report_for_status, locals: {entries: @report.relative_retentions_by(locals[:category], :back_after_five_minutes, first_visits)})
+= haml(:_report_for_event, locals: {entries: @report.relative_retentions_by(locals[:category], :back_after_five_minutes, first_visits)})
 
 %h2 In absolute values
 %h3 Visits
-= haml(:_report_for_status, locals: {entries: @report.acquisitions_by(locals[:category], :visit)}, layout: false)
+= haml(:_report_for_event, locals: {entries: @report.acquisitions_by(locals[:category], :visit)}, layout: false)
 %h3 First visits
-= haml(:_report_for_status, locals: {entries: @report.acquisitions_by(locals[:category], :first_visit)}, layout: false)
+= haml(:_report_for_event, locals: {entries: @report.acquisitions_by(locals[:category], :first_visit)}, layout: false)
 %h3 Signups
-= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :signup)}, layout: false)
+= haml(:_report_for_event, locals: {entries: @report.activations_by(locals[:category], :signup)}, layout: false)
 %h3 Purchases
-= haml(:_report_for_status, locals: {entries: @report.activations_by(locals[:category], :buy)}, layout: false)
+= haml(:_report_for_event, locals: {entries: @report.activations_by(locals[:category], :buy)}, layout: false)
 
           
-@@_report_for_status
+@@_report_for_event
 %table
   - locals[:entries].to_a.sort {|l, r| l.first <=> r.first}.each do |(k, v)|
     %tr

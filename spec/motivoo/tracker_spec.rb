@@ -45,9 +45,9 @@ module Motivoo
       
       it "should track by month, week and day based on cohorts user is assigned to regardless of the time of visit" do
         user_data.stub!(:cohorts).and_return("month" => month_cohort, "week" => week_cohort, "day" => day_cohort)
-        connection.should_receive(:track).with(expected_category, expected_status, "month", month_cohort)
-        connection.should_receive(:track).with(expected_category, expected_status, "week", week_cohort)
-        connection.should_receive(:track).with(expected_category, expected_status, "day", day_cohort)
+        connection.should_receive(:track).with(expected_category, expected_event, "month", month_cohort)
+        connection.should_receive(:track).with(expected_category, expected_event, "week", week_cohort)
+        connection.should_receive(:track).with(expected_category, expected_event, "day", day_cohort)
         at("2013-01-01 12:00") { track.call }
       end
       
@@ -66,13 +66,13 @@ module Motivoo
         end
 
         it "should track each cohort" do
-          connection.should_receive(:track).with(expected_category, expected_status, "month", month_cohort)
-          connection.should_receive(:track).with(expected_category, expected_status, "week", week_cohort)
-          connection.should_receive(:track).with(expected_category, expected_status, "day", day_cohort)
+          connection.should_receive(:track).with(expected_category, expected_event, "month", month_cohort)
+          connection.should_receive(:track).with(expected_category, expected_event, "week", week_cohort)
+          connection.should_receive(:track).with(expected_category, expected_event, "day", day_cohort)
           at("2013-01-01 12:00") { track.call }
         end
         
-        it "should track each category + status combination only once per user by default" do
+        it "should track each category + event combination only once per user by default" do
           user_data.should_receive(:[]).and_return(nil)
           user_data.should_receive(:[]=)
           at("2013-01-01 12:00") { track.call }
@@ -82,7 +82,7 @@ module Motivoo
           at("2013-01-01 12:00") { track.call }
         end
       
-        it "should optionally track a category + status combination more than once per user" do
+        it "should optionally track a category + event combination more than once per user" do
           user_data.stub!(:[]).and_return(true) # Even if already tracked.
           connection.should_receive(:track)
           at("2013-01-01 12:00") { track.call(allow_repeated: true) }
@@ -122,9 +122,9 @@ module Motivoo
         end
 
         it "should track using the existing cohort only" do
-          connection.should_receive(:track).with(expected_category, expected_status, "day", day_cohort)
-          connection.should_not_receive(:track).with(expected_category, expected_status, "month", anything)
-          connection.should_not_receive(:track).with(expected_category, expected_status, "week", anything)
+          connection.should_receive(:track).with(expected_category, expected_event, "day", day_cohort)
+          connection.should_not_receive(:track).with(expected_category, expected_event, "month", anything)
+          connection.should_not_receive(:track).with(expected_category, expected_event, "week", anything)
           at("2013-01-01 12:00") { track.call }
         end
       end
@@ -150,7 +150,7 @@ module Motivoo
       let(:track) { lambda { |opts = {}| tracker.acquisition(:visit, opts) } }
       it_should_behave_like("tracking category") do
         let(:expected_category) { "acquisition" }
-        let(:expected_status) { "visit" }
+        let(:expected_event) { "visit" }
       end
       it_should_behave_like("an exception-safe method")
     end
@@ -159,7 +159,7 @@ module Motivoo
       let(:track) { lambda { |opts = {}| tracker.activation(:signup, opts) } }
       it_should_behave_like("tracking category") do
         let(:expected_category) { "activation" }
-        let(:expected_status) { "signup" }
+        let(:expected_event) { "signup" }
       end
       it_should_behave_like("an exception-safe method")
     end
@@ -168,7 +168,7 @@ module Motivoo
       let(:track) { lambda { |opts = {}| tracker.retention(:frequent_poster, opts) } }
       it_should_behave_like("tracking category") do
         let(:expected_category) { "retention" }
-        let(:expected_status) { "frequent_poster" }
+        let(:expected_event) { "frequent_poster" }
       end
       it_should_behave_like("an exception-safe method")
     end
@@ -177,7 +177,7 @@ module Motivoo
       let(:track) { lambda { |opts = {}| tracker.referral(:referred_active, opts) } }
       it_should_behave_like("tracking category") do
         let(:expected_category) { "referral" }
-        let(:expected_status) { "referred_active" }
+        let(:expected_event) { "referred_active" }
       end
       it_should_behave_like("an exception-safe method")
     end
@@ -186,7 +186,7 @@ module Motivoo
       let(:track) { lambda { |opts = {}| tracker.revenue(:order, opts) } }
       it_should_behave_like("tracking category") do
         let(:expected_category) { "revenue" }
-        let(:expected_status) { "order" }
+        let(:expected_event) { "order" }
       end
       it_should_behave_like("an exception-safe method")
     end
@@ -215,13 +215,13 @@ module Motivoo
         Tracker.before_activation {}
       end
       
-      it "should invoke once with status" do
+      it "should invoke once with event" do
         callback.should_receive(:call).once.with(:visit, anything, anything, anything)
         tracker.acquisition(:visit)
       end
       
       it "should allow user to skip" do
-        Tracker.before_acquisition do |status|
+        Tracker.before_acquisition do |event|
           skip!
         end
         connection.should_not_receive(:track)
@@ -332,7 +332,7 @@ module Motivoo
       it "should create a copy of env" do
         original_env = tracker.serialize_into({})
         Tracker.deserialize_from(original_env).should == tracker
-        callback.should_receive(:call) do |_status, env, *_args|
+        callback.should_receive(:call) do |_event, env, *_args|
           env.should be_a(Hash)
           env.should_not == original_env
         end
