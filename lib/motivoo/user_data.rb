@@ -58,10 +58,10 @@ module Motivoo
     
     # Assigns the current user to a cohort.
     #
-    def assign_to(cohort_name, cohort)
-      raise "User already assigned (#{cohort_name.inspect})" if @cohorts[cohort_name]
-      @connection.assign_cohort(@user_id, cohort_name, cohort)
-      @cohorts.store(cohort_name, cohort)
+    def assign_to(cohort_category, cohort)
+      raise "User already assigned (#{cohort_category.inspect})" if @cohorts[cohort_category]
+      @connection.assign_cohort(@user_id, cohort_category, cohort)
+      @cohorts.store(cohort_category, cohort)
     end
     
     # Returns cohorts the current user is assigned to or an empty hash.

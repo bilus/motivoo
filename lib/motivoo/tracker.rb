@@ -199,19 +199,21 @@ module Motivoo
       callback_result = invoke_before_callbacks(category, status)
       return if callback_result.skip?
       
-      user_cohorts = @user_data.cohorts
-      Tracker.cohorts.each_pair do |cohort_name, generator|
-        assigned_cohort = user_cohorts[cohort_name]
-        cohort = assigned_cohort || generate_cohort(generator, date_override)
-        
+      if @user_data.cohorts.empty?
+        Tracker.cohorts.each_pair do |cohort_category, generator| 
+          cohort = generate_cohort(generator, date_override)
+          @user_data.assign_to(cohort_category, cohort) if cohort
+        end 
+      end      
+      
+      @user_data.cohorts.each_pair do |cohort_category, cohort|
         # When cohort is nil, it means that it shouldn't be tracked (usually, because it'll be set later into the funnel because it depends on some action of the user).
         unless cohort.nil?
           # TODO: Performance issue, each one is a separate HTTP call to the database server. Calls can be easily combined:
-          # @user_data.assign_to(cohort_name1: cohort1, cohort_name2: cohort2 ...)
+          # @user_data.assign_to(cohort_category1: cohort1, cohort_category2: cohort2 ...)
           # @connection.track(..array...)
           # Arguments to these calls can be easily built using inject instead of each_pair above.
-          @user_data.assign_to(cohort_name, cohort) unless assigned_cohort
-          @connection.track(category.to_s, status.to_s, cohort_name, cohort)
+          @connection.track(category.to_s, status.to_s, cohort_category, cohort)
         end
       end
     end

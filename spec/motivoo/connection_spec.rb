@@ -3,27 +3,27 @@ require 'motivoo/connection'
 
 describe Motivoo::Connection do
   let(:connection) { Motivoo::Connection.instance }
-  let(:cohort_name) { "month" }
+  let(:cohort_category) { "month" }
   let(:cohort1) { "2013-10" }
   let(:cohort2) { "2013-12" }
   
   context "[tracking]" do
     it "should not track anything initially" do
-      connection.find("acquisition", "visit", cohort_name).should == {}
+      connection.find("acquisition", "visit", cohort_category).should == {}
     end
   
     it "should create initial record with usage count of 1" do
-      connection.track("acquisition", "visit", cohort_name, cohort1)
-      connection.track("acquisition", "visit", cohort_name, cohort2)
-      connection.find("acquisition", "visit", cohort_name).should == {cohort1 => 1, cohort2 => 1}
+      connection.track("acquisition", "visit", cohort_category, cohort1)
+      connection.track("acquisition", "visit", cohort_category, cohort2)
+      connection.find("acquisition", "visit", cohort_category).should == {cohort1 => 1, cohort2 => 1}
     end
   
     it "should inc usage count" do
-      connection.track("acquisition", "visit", cohort_name, cohort1)
-      connection.track("acquisition", "visit", cohort_name, cohort2)
-      connection.track("acquisition", "visit", cohort_name, cohort2)
-      connection.track("acquisition", "visit", cohort_name, cohort2)
-      connection.find("acquisition", "visit", cohort_name).should == {cohort1 => 1, cohort2 => 3}
+      connection.track("acquisition", "visit", cohort_category, cohort1)
+      connection.track("acquisition", "visit", cohort_category, cohort2)
+      connection.track("acquisition", "visit", cohort_category, cohort2)
+      connection.track("acquisition", "visit", cohort_category, cohort2)
+      connection.find("acquisition", "visit", cohort_category).should == {cohort1 => 1, cohort2 => 3}
     end
   end    
   
@@ -36,8 +36,8 @@ describe Motivoo::Connection do
 
     it "should find user data if it's already there" do
       existing = connection.find_or_create_user_data(id)
-      connection.assign_cohort(id, cohort_name, cohort1)
-      connection.find_or_create_user_data(id).should == {"cohorts" => {cohort_name => cohort1}}
+      connection.assign_cohort(id, cohort_category, cohort1)
+      connection.find_or_create_user_data(id).should == {"cohorts" => {cohort_category => cohort1}}
     end
     
     it "should generate user id" do
@@ -46,10 +46,10 @@ describe Motivoo::Connection do
     
     it "should assign to cohort" do
       user_id = connection.generate_user_id
-      cohort_name = "cohort_name"
+      cohort_category = "cohort_category"
       cohort = "cohort"
-      connection.assign_cohort(user_id, cohort_name, cohort)
-      connection.find_or_create_user_data(user_id)["cohorts"].should == {cohort_name => cohort}
+      connection.assign_cohort(user_id, cohort_category, cohort)
+      connection.find_or_create_user_data(user_id)["cohorts"].should == {cohort_category => cohort}
     end
     
     context "when finding by external user id" do
@@ -70,7 +70,7 @@ describe Motivoo::Connection do
     context "when destroying orphaned user data" do
       it "should no longer find it" do
         existing = connection.find_or_create_user_data(id)
-        connection.assign_cohort(id, cohort_name, cohort1)
+        connection.assign_cohort(id, cohort_category, cohort1)
         connection.destroy_user_data(id)
         connection.find_or_create_user_data(id).should == {}
       end

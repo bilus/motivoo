@@ -42,8 +42,8 @@ module Motivoo
     
     # Define a cohort.
     #
-    def define_cohort(cohort_name, &block)
-      Tracker.define_cohort(cohort_name, &block)
+    def define_cohort(cohort_category, &block)
+      Tracker.define_cohort(cohort_category, &block)
     end
   end
 end

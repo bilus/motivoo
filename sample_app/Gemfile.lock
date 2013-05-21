@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    motivoo (0.5)
+    motivoo (0.6)
       bson_ext
       mongo
       rack
@@ -9,7 +9,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    bson (1.8.5)
+    bson (1.8.6)
     bson_ext (1.8.5)
       bson (~> 1.8.5)
     daemons (1.1.9)

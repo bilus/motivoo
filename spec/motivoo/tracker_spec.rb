@@ -34,9 +34,9 @@ module Motivoo
     end
   
     shared_examples_for("tracking category") do
-      let(:month_cohort) { "2012-12" }
-      let(:week_cohort) { "2012(50)" }
-      let(:day_cohort) { "2012-12-10" }
+      let(:month_cohort) { "2013-01" }
+      let(:week_cohort) { "2013(1)" }
+      let(:day_cohort) { "2013-01-01" }
       
       it "should find out which cohorts the user is assigned to" do
         user_data.should_receive(:cohorts).and_return("month" => month_cohort, "week" => week_cohort, "day" => day_cohort)
@@ -51,49 +51,88 @@ module Motivoo
         at("2013-01-01 12:00") { track.call }
       end
       
-      it "should assign user to cohorts that are missing in user data based on current time" do
-        user_data.stub!(:cohorts).and_return("day" => day_cohort)
-        user_data.should_receive(:assign_to).with("week", "2013(1)")
-        user_data.should_receive(:assign_to).with("month", "2013-01")
-        at("2013-01-01 12:00") { track.call }
+      context "given user is not assigned to any cohorts yet" do
+        before(:each) do
+          user_data.stub!(:cohorts).and_return(
+            {}, 
+            {"month" => month_cohort, "week" => week_cohort, "day" => day_cohort})
+        end
+        
+        it "should assign user to cohorts" do
+          user_data.should_receive(:assign_to).with("day", day_cohort)
+          user_data.should_receive(:assign_to).with("week", week_cohort)
+          user_data.should_receive(:assign_to).with("month", month_cohort)
+          at("2013-01-01 12:00") { track.call }
+        end
+
+        it "should track each cohort" do
+          connection.should_receive(:track).with(expected_category, expected_status, "month", month_cohort)
+          connection.should_receive(:track).with(expected_category, expected_status, "week", week_cohort)
+          connection.should_receive(:track).with(expected_category, expected_status, "day", day_cohort)
+          at("2013-01-01 12:00") { track.call }
+        end
+        
+        it "should track each category + status combination only once per user by default" do
+          user_data.should_receive(:[]).and_return(nil)
+          user_data.should_receive(:[]=)
+          at("2013-01-01 12:00") { track.call }
+        
+          user_data.should_receive(:[]).and_return(true)
+          connection.should_not_receive(:track)
+          at("2013-01-01 12:00") { track.call }
+        end
+      
+        it "should optionally track a category + status combination more than once per user" do
+          user_data.stub!(:[]).and_return(true) # Even if already tracked.
+          connection.should_receive(:track)
+          at("2013-01-01 12:00") { track.call(allow_repeated: true) }
+        end
+      
+        it "should not track nil cohorts" do
+          Tracker.stub!(:cohorts).and_return("seen_promotion" => lambda { nil })
+          user_data.should_not_receive(:assign_to).with("seen_promotion", nil)
+          user_data.should_not_receive(:track).with(anything, anything, "seen_promotion", nil)
+          at("2013-01-01 12:00") { track.call }
+        end
+        
+        context "after a new cohort is defined" do
+          after(:each) do
+            Tracker.remove_cohort!("build_number")
+          end
+          
+          it "should use it" do
+            Tracker.define_cohort("build_number") do
+              "123"
+            end
+        
+            user_data.should_receive(:assign_to).with("build_number", "123")
+            at("2013-01-01 12:00") { tracker.acquisition(:visit) }
+          end
+        end
       end
 
-      it "should use newly assigned cohorts when tracking" do
-        user_data.stub!(:cohorts).and_return("day" => day_cohort)
-        connection.should_receive(:track).with(expected_category, expected_status, "month", "2013-01")
-        connection.should_receive(:track).with(expected_category, expected_status, "week", "2013(1)")
-        connection.should_receive(:track).with(expected_category, expected_status, "day", day_cohort)
-        at("2013-01-01 12:00") { track.call }
-      end
-      
-      it "should track each category + status combination only once per user by default" do
-        user_data.should_receive(:[]).and_return(nil)
-        user_data.should_receive(:[]=)
-        at("2013-01-01 12:00") { track.call }
-        
-        user_data.should_receive(:[]).and_return(true)
-        connection.should_not_receive(:track)
-        at("2013-01-01 12:00") { track.call }
-      end
-      
-      it "should optionally track a category + status combination more than once per user" do
-        user_data.stub!(:[]).and_return(true) # Even if already tracked.
-        connection.should_receive(:track)
-        at("2013-01-01 12:00") { track.call(allow_repeated: true) }
-      end
-      
-      it "should not track nil cohorts" do
-        user_data.stub!(:cohorts).and_return({})
-        Tracker.stub!(:cohorts).and_return("seen_promotion" => lambda { nil })
-        user_data.should_not_receive(:assign_to).with("seen_promotion", nil)
-        user_data.should_not_receive(:track).with(anything, anything, "seen_promotion", nil)
-        at("2013-01-01 12:00") { track.call }
+      context "given user is already assigned to a cohort" do
+        before(:each) do
+          user_data.stub!(:cohorts).and_return("day" => day_cohort)
+        end
+
+        it "should not assign user to cohorts" do
+          user_data.should_not_receive(:assign_to)
+          at("2013-01-01 12:00") { track.call }
+        end
+
+        it "should track using the existing cohort only" do
+          connection.should_receive(:track).with(expected_category, expected_status, "day", day_cohort)
+          connection.should_not_receive(:track).with(expected_category, expected_status, "month", anything)
+          connection.should_not_receive(:track).with(expected_category, expected_status, "week", anything)
+          at("2013-01-01 12:00") { track.call }
+        end
       end
     end
   
     shared_examples_for("an exception-safe method") do
       before(:each) do
-        connection.stub!(:track).and_raise("An error")
+        user_data.stub!(:cohorts).and_raise("An error")
         Kernel.stub!(:puts)
       end
       
@@ -158,17 +197,6 @@ module Motivoo
       it "should delegate to user data" do
         user_data.should_receive(:set_ext_user_id).with(ext_user_id)
         tracker.set_ext_user_id(ext_user_id)
-      end
-    end
-    
-    context "defining cohorts" do
-      it "should use it" do
-        Tracker.define_cohort("build_number") do
-          "123"
-        end
-        
-        connection.should_receive(:track).with("acquisition", "visit", "build_number", "123")
-        at("2013-01-01 12:00") { tracker.acquisition(:visit) }
       end
     end
     

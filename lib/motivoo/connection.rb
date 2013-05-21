@@ -25,16 +25,16 @@ module Motivoo
     
     # Tracks an event.
     #
-    def track(category, status, cohort_name, cohort)
+    def track(category, status, cohort_category, cohort)
       # When changing the query, revise Connection#create_indices.
-      @tracking.update({category: category, status: status, cohort_name: cohort_name, cohort: cohort}, {"$inc" => {count: 1}}, upsert: true)
+      @tracking.update({category: category, status: status, cohort_category: cohort_category, cohort: cohort}, {"$inc" => {count: 1}}, upsert: true)
     end
   
     # Finds an event.
     #
-    def find(category, status, cohort_name)
+    def find(category, status, cohort_category)
       # When changing the query, revise Connection#create_indices. It's less important than Connection#track while only Report uses it.
-      @tracking.find(category: category, status: status, cohort_name: cohort_name).to_a.inject({}) {|a, r| a.merge(r["cohort"] => r["count"])}
+      @tracking.find(category: category, status: status, cohort_category: cohort_category).to_a.inject({}) {|a, r| a.merge(r["cohort"] => r["count"])}
     end
     
     # User data
@@ -81,8 +81,8 @@ module Motivoo
     
     # Assigns a user to a cohort.
     #
-    def assign_cohort(user_id, cohort_name, cohort)
-      @user_data.update({"_id" => BSON::ObjectId(user_id)}, "$set" => {"cohorts.#{cohort_name}" => cohort})
+    def assign_cohort(user_id, cohort_category, cohort)
+      @user_data.update({"_id" => BSON::ObjectId(user_id)}, "$set" => {"cohorts.#{cohort_category}" => cohort})
     end
     
     # Sets a user-defined user data field.
@@ -133,7 +133,7 @@ module Motivoo
     
     def create_indices
       @user_data.ensure_index('ext_user_id', unique: true, sparse: true)
-      @tracking.ensure_index("category" => 1, "status" => 1, "cohort_name" => 1, "cohort" => 1)
+      @tracking.ensure_index("category" => 1, "status" => 1, "cohort_category" => 1, "cohort" => 1)
     end
   end
 end
