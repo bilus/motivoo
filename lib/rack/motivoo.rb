@@ -14,7 +14,8 @@ module Rack
     end
     
     def call(env)
-      return @app.call if env["PATH_INFO"] =~ %r{^/favicon.ico$} # TODO: Make it configurable somehow(?). FIX: No cookies passed when requesting favicon.ico which results in new user data record created for every request.
+      # FIX: No cookies passed by Chrome when it requests favicon.ico/png which results in new user data record being created for every request. AFAIK, IE keeps a separate cookie store for favicon requests. So let's ignore these requests completely.
+      return @app.call if env["PATH_INFO"] =~ %r{^/favicon\.[a-z]+$}
         
       ::Motivoo::Context.create(env) do |tracker, request|
         ::Motivoo::Visit.track(tracker, request) do |tracker, request|
