@@ -60,7 +60,7 @@ module Motivoo
     # Returns a Tracker instance from the env hash (used internally with Rack env).
     #
     def Tracker.deserialize_from(env)
-      env[HASH_KEY] or raise "Tracker couldn't be found in the hash. Internal error."
+      env[HASH_KEY] or raise "Tracker couldn't be found in the env hash. Internal error."
     end
     
     # Associates the currently tracked user with an external user.

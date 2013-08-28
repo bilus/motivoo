@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    motivoo (0.6)
+    motivoo (0.6.6)
       bson_ext
       mongo
       rack
@@ -16,8 +16,8 @@ GEM
     eventmachine (1.0.3)
     haml (4.0.2)
       tilt
-    mongo (1.8.5)
-      bson (~> 1.8.5)
+    mongo (1.8.6)
+      bson (~> 1.8.6)
     rack (1.5.2)
     rack-protection (1.5.0)
       rack

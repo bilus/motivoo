@@ -29,6 +29,10 @@ Motivoo.configure do |config|
     nil
   end
   
+  config.define_cohort("new") do
+    "some value"
+  end
+  
   config.before_activation do |event, env, tracker, user|
     case event
     when :buy
@@ -165,7 +169,8 @@ Thank you for your purchase.
 User has been contacted!
 
 @@report
-= haml(:_report_for_category, locals: {title: "By day", category: :day}, layout: false)
+/= haml(:_report_for_category, locals: {title: "By day", category: :day}, layout: false)
+= haml(:_report_for_category, locals: {title: "By new", category: :new}, layout: false)
 /= haml(:_report_for_category, locals: {title: "By week", category: :week}, layout: false)
 /= haml(:_report_for_category, locals: {title: "By month", category: :month}, layout: false)
 /= haml(:_report_for_category, locals: {title: "By app version", category: :app_version}, layout: false)
