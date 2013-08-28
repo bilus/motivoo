@@ -3,17 +3,17 @@ require 'motivoo/tracker'
 
 module Motivoo
   describe Tracker do
-    let(:connection) { mock("connection").as_null_object }
-    let(:request) { mock("request") }
+    let(:connection) { double("connection").as_null_object }
+    let(:request) { double("request") }
     let(:user_data) do
-      user_data = mock("user_data").as_null_object
+      user_data = double("user_data").as_null_object
       user_data
     end
     
     let(:tracker) { Tracker.new(user_data, connection) }
   
     before(:each) do
-      user_data.stub!(:[]).and_return(nil)
+      user_data.stub(:[]).and_return(nil)
     end
     
     context "when serializing into hash" do
@@ -44,7 +44,7 @@ module Motivoo
       end
       
       it "should track by month, week and day based on cohorts user is assigned to regardless of the time of visit" do
-        user_data.stub!(:cohorts).and_return("month" => month_cohort, "week" => week_cohort, "day" => day_cohort)
+        user_data.stub(:cohorts).and_return("month" => month_cohort, "week" => week_cohort, "day" => day_cohort)
         connection.should_receive(:track).with(expected_category, expected_event, "month", month_cohort)
         connection.should_receive(:track).with(expected_category, expected_event, "week", week_cohort)
         connection.should_receive(:track).with(expected_category, expected_event, "day", day_cohort)
@@ -53,7 +53,7 @@ module Motivoo
       
       context "given user is not assigned to any cohorts yet" do
         before(:each) do
-          user_data.stub!(:cohorts).and_return(
+          user_data.stub(:cohorts).and_return(
             {}, 
             {"month" => month_cohort, "week" => week_cohort, "day" => day_cohort})
         end
@@ -83,13 +83,13 @@ module Motivoo
         end
       
         it "should optionally track a category + event combination more than once per user" do
-          user_data.stub!(:[]).and_return(true) # Even if already tracked.
+          user_data.stub(:[]).and_return(true) # Even if already tracked.
           connection.should_receive(:track)
           at("2013-01-01 12:00") { track.call(allow_repeated: true) }
         end
       
         it "should not track nil cohorts" do
-          Tracker.stub!(:cohorts).and_return("seen_promotion" => lambda { nil })
+          Tracker.stub(:cohorts).and_return("seen_promotion" => lambda { nil })
           user_data.should_not_receive(:assign_to).with("seen_promotion", nil)
           user_data.should_not_receive(:track).with(anything, anything, "seen_promotion", nil)
           at("2013-01-01 12:00") { track.call }
@@ -113,7 +113,7 @@ module Motivoo
 
       context "given user is already assigned to a cohort" do
         before(:each) do
-          user_data.stub!(:cohorts).and_return("day" => day_cohort)
+          user_data.stub(:cohorts).and_return("day" => day_cohort)
         end
 
         it "should not assign user to cohorts" do
@@ -132,8 +132,8 @@ module Motivoo
   
     shared_examples_for("an exception-safe method") do
       before(:each) do
-        user_data.stub!(:cohorts).and_raise("An error")
-        Kernel.stub!(:puts)
+        user_data.stub(:cohorts).and_raise("An error")
+        Kernel.stub(:puts)
       end
       
       it "should not let exceptions out" do
@@ -200,7 +200,7 @@ module Motivoo
       end
     end
     
-    context "event callbacks" do
+    context "#before_event callbacks" do
       let(:callback) { mock_event_handler }
       let(:skip) { lambda { |*args| skip! } }
       let(:noop)  { lambda { |*args| } }
@@ -260,6 +260,40 @@ module Motivoo
       end
     end
     
+    context "#before_tracking callback" do
+      let(:callback) { mock_event_handler }
+      let(:skip) { lambda { |*args| skip! } }
+      let(:noop)  { lambda { |*args| } }
+      
+      before(:each) do
+        Tracker.before_tracking(&callback)
+      end
+      
+      after(:each) do
+        Tracker.before_tracking {}
+      end
+      
+      it "should invoke once with event" do
+        callback.should_receive(:call).once.with(:visit, anything, anything, anything)
+        tracker.acquisition(:visit)
+      end
+      
+      it "should allow user to skip" do
+        Tracker.before_tracking do |*args|
+          skip!
+        end
+        connection.should_not_receive(:track)
+        tracker.acquisition(:visit)
+      end
+      
+      it "should pass the env, tracker and user data into the handler" do
+        env = {foo: "bar"}
+        tracker.serialize_into(env)
+        callback.should_receive(:call).once.with(anything, env, tracker, user_data)
+        tracker.acquisition(:visit)
+      end
+    end
+    
     context "[repeat visit callback]" do
       let(:callback) { mock_event_handler }
   
@@ -289,14 +323,14 @@ module Motivoo
         it "should invoke the callback whenever it changes user id" do
           id1 = "id1"
           id2 = "id2"
-          user_data.stub!(:user_id).and_return(id1, id2)
+          user_data.stub(:user_id).and_return(id1, id2)
           callback.should_receive(:call).with(tracker, user_data)
           tracker.set_ext_user_id(ext_user_id)
         end
 
         it "should not invoke the callback for unchanged user id" do
           id = "id"
-          user_data.stub!(:user_id).and_return(id, id)
+          user_data.stub(:user_id).and_return(id, id)
           callback.should_not_receive(:call)
           tracker.set_ext_user_id(ext_user_id)
         end
@@ -305,11 +339,11 @@ module Motivoo
     
     context "when asked to act as a user" do
       let(:ext_user_id) { "ext_user_id" }
-      let(:new_user_data) { mock("new_user_data") }
+      let(:new_user_data) { double("new_user_data") }
       let(:callback) { mock_event_handler }
       
       before(:each) do
-        UserData.stub!(:new).and_return(new_user_data)
+        UserData.stub(:new).and_return(new_user_data)
         Tracker.before_acquisition(&callback)
       end
     
@@ -318,7 +352,7 @@ module Motivoo
       end
       
       it "should return a different tracker instance" do
-        new_user_data.stub!(:set_ext_user_id)
+        new_user_data.stub(:set_ext_user_id)
         tracker.act_as(ext_user_id).should_not == tracker
       end
 
@@ -346,7 +380,7 @@ module Motivoo
       let(:day_cohort) { "2012-12-10" }
 
       it "should assign to the correct cohort" do
-        user_data.stub!(:cohorts).and_return({})
+        user_data.stub(:cohorts).and_return({})
         user_data.should_receive(:assign_to).with("day", day_cohort)
         user_data.should_receive(:assign_to).with("week", week_cohort)
         user_data.should_receive(:assign_to).with("month", month_cohort)

@@ -4,8 +4,8 @@ require 'rack/motivoo'
 
 describe "Rack middleware" do
   let!(:tracker) do
-    tracker = mock("tracker").as_null_object
-    Motivoo::Context.stub!(:create).and_yield(tracker, request)
+    tracker = double("tracker").as_null_object
+    Motivoo::Context.stub(:create).and_yield(tracker, request)
     tracker
   end
   
@@ -14,15 +14,15 @@ describe "Rack middleware" do
   let(:middleware) { Rack::Motivoo.new(app) }
 
   let!(:response) do 
-    response = mock("response").as_null_object 
-    Rack::Response.stub!(:new).and_return(response)
+    response = double("response").as_null_object 
+    Rack::Response.stub(:new).and_return(response)
     response
   end
   
   let!(:request) do 
-    request = mock("request").as_null_object
-    request.stub!(:cookies).and_return({})
-    Rack::Request.stub!(:new).and_return(request)
+    request = double("request").as_null_object
+    request.stub(:cookies).and_return({})
+    Rack::Request.stub(:new).and_return(request)
     request
   end
   

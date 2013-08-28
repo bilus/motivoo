@@ -4,9 +4,9 @@ require 'motivoo/visit'
 module Motivoo
   
   describe Visit do
-    let(:tracker) { mock("tracker").as_null_object }
-    let(:request) { mock("request").as_null_object }
-    let(:response) { mock("response").as_null_object }
+    let(:tracker) { double("tracker").as_null_object }
+    let(:request) { double("request").as_null_object }
+    let(:response) { double("response").as_null_object }
 
     it "should yield" do
       yielded = false

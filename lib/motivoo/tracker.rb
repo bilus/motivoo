@@ -87,6 +87,16 @@ module Motivoo
       @user_data.user_id
     end
 
+    # Callback invoked before any event is tracked whether it's actually tracked or not (track_once).
+    def Tracker.before_tracking(&callback)
+      @@callbacks[:before_tracking] = callback
+    end
+
+    # Callback invoked before any event is tracked iff the event is tracked (track_once)..
+    def Tracker.before_any(&callback)
+      @@callbacks[:before_any] = callback
+    end
+
     [:acquisition, :activation, :retention, :referral, :revenue].each do |category| # TODO: Duplication -- Report#acquisitions_by etc.
       
       # Event tracking methods.
@@ -103,6 +113,8 @@ module Motivoo
         raise "Unrecognized option(s): #{options.keys.join(', ')}." unless opts.empty?
         
         begin
+          return if invoke_callback(@@callbacks[:before_tracking], event).skip?
+          
           if allow_repeated
             do_track(category, event, on_date)
           else
@@ -115,7 +127,7 @@ module Motivoo
         end
       end
       
-      # Callbacks invoked before an event is tracked in a given category.
+      # Callbacks invoked before an event is tracked in a given category iff the event is tracked (track_once).
       #
       # @example
       #   Tracker.before_activation { }
@@ -148,11 +160,6 @@ module Motivoo
       end
     end
 
-    # Callback invoked before any event is tracked.
-    def Tracker.before_any(&callback)
-      @@callbacks[:before_any] = callback
-    end
-    
     # Callback invoked for every repeat visit (actually, every repeat HTTP request) of the same user.
     def Tracker.on_repeat_visit(&callback)
       @@callbacks[:on_repeat_visit] = callback

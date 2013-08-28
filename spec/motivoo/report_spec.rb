@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'motivoo/report'
 
 describe Motivoo::Report do
-  let(:connection) { mock("connection").as_null_object }
+  let(:connection) { double("connection").as_null_object }
   let(:report) { Motivoo::Report.new(connection) }
   
   shared_examples_for "report with absolute values" do

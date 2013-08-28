@@ -17,13 +17,13 @@ def at(time_str)
 end
 
 def mock_event_handler
-  handler = mock("handler")
+  handler = double("handler")
   l = Proc.new do |*args| 
     begin
       handler.call(*args)
     end
   end
-  handler.stub!(:to_proc).and_return(l)
+  handler.stub(:to_proc).and_return(l)
   handler
 end
   

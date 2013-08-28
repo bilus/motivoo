@@ -3,14 +3,14 @@ require 'motivoo/user_data'
 
 module Motivoo
   describe UserData do
-    let(:connection) { mock("connection") }
+    let(:connection) { double("connection") }
     let(:env_no_user_id) { {"HTTP_COOKIE" => ""} }
 
     let(:user_id) { "user_id" }
     let(:env_with_user_id) { {"HTTP_COOKIE" => "#{UserData::USER_ID_COOKIE}=#{user_id}"} }
     let(:cohorts) { {"month" => "2012-10"} }
 
-    let(:response) { mock("response") }
+    let(:response) { double("response") }
     
     context "when deserializing from env" do
       let(:user_data_hash) { {"cohorts" => cohorts} }
@@ -28,8 +28,8 @@ module Motivoo
       end
       
       it "should make it possible to tell if it's a new or existing user id" do
-        connection.stub!(:generate_user_id)
-        connection.stub!(:find_or_create_user_data).and_return({})
+        connection.stub(:generate_user_id)
+        connection.stub(:find_or_create_user_data).and_return({})
         _, is_existing_user = UserData.deserialize_from(env_no_user_id, connection)
         is_existing_user.should be_false
         _, is_existing_user = UserData.deserialize_from(env_with_user_id, connection)
@@ -41,11 +41,11 @@ module Motivoo
       let(:new_user_id) { "new_user_id" }
       
       before(:each) do
-        connection.stub!(:find_or_create_user_data).and_return({})
+        connection.stub(:find_or_create_user_data).and_return({})
       end
 
       it "should generate a new user id if user id wasn't in cookies" do
-        connection.stub!(:generate_user_id).and_return(new_user_id)
+        connection.stub(:generate_user_id).and_return(new_user_id)
         user_data, _ = UserData.deserialize_from(env_no_user_id, connection)
         response.should_receive(:set_cookie).with(anything, hash_including(value: new_user_id))
         user_data.serialize_into(response)
@@ -69,13 +69,13 @@ module Motivoo
       end
       
       it "should make local changes" do
-        connection.stub!(:assign_cohort)
+        connection.stub(:assign_cohort)
         user_data.assign_to(cohort_category, cohort)
         user_data.cohorts[cohort_category].should == cohort
       end
       
       it "should raise an error if user already assigned" do
-        connection.stub!(:assign_cohort)
+        connection.stub(:assign_cohort)
         user_data.assign_to(cohort_category, cohort)
         lambda { user_data.assign_to(cohort_category, "#{cohort}2") }.should raise_error
         user_data.cohorts[cohort_category].should == cohort
@@ -91,11 +91,11 @@ module Motivoo
 
       context "when current user was not authenticated" do
         before(:each) do
-          connection.stub!(:set_user_data)
+          connection.stub(:set_user_data)
         end
         
         let!(:user_data) do
-          connection.stub!(:find_or_create_user_data).and_return({})
+          connection.stub(:find_or_create_user_data).and_return({})
           UserData.deserialize_from(env_with_user_id, connection).first
         end
 
@@ -106,8 +106,8 @@ module Motivoo
 
         context "when the new user has a user data record" do
           before(:each) do
-            connection.stub!(:find_user_data_by_ext_user_id).and_return([existing_user_id, user_data_hash])
-            connection.stub!(:destroy_user_data)
+            connection.stub(:find_user_data_by_ext_user_id).and_return([existing_user_id, user_data_hash])
+            connection.stub(:destroy_user_data)
           end
           
           it "should use the existing user data record contents" do
@@ -134,7 +134,7 @@ module Motivoo
         
         context "when the new user has no user data record" do
           before(:each) do
-            connection.stub!(:find_user_data_by_ext_user_id).and_return(nil)
+            connection.stub(:find_user_data_by_ext_user_id).and_return(nil)
           end
 
           it "should associate the current user data record with the new user" do
@@ -151,7 +151,7 @@ module Motivoo
       
       context "when current user was authenticated" do
         let!(:user_data) do
-          connection.stub!(:find_or_create_user_data).and_return({"ext_user_id" => ext_user_id})
+          connection.stub(:find_or_create_user_data).and_return({"ext_user_id" => ext_user_id})
           UserData.deserialize_from(env_with_user_id, connection).first
         end
 
@@ -170,7 +170,7 @@ module Motivoo
           
           context "when the new user has a user data record" do
             before(:each) do
-              connection.stub!(:find_user_data_by_ext_user_id).and_return([existing_user_id, user_data_hash])
+              connection.stub(:find_user_data_by_ext_user_id).and_return([existing_user_id, user_data_hash])
             end
           
             it "should use the existing user data record contents" do
@@ -187,9 +187,9 @@ module Motivoo
           
           context "when the new user has no user data record" do
             before(:each) do
-              connection.stub!(:find_user_data_by_ext_user_id).and_return(nil)
-              connection.stub!(:set_user_data)
-              connection.stub!(:generate_user_id)
+              connection.stub(:find_user_data_by_ext_user_id).and_return(nil)
+              connection.stub(:set_user_data)
+              connection.stub(:generate_user_id)
             end
 
             it "should create a new record" do
@@ -198,7 +198,7 @@ module Motivoo
             end
 
             it "should associate the new record with the new user" do
-              connection.stub!(:generate_user_id).and_return(new_user_id)
+              connection.stub(:generate_user_id).and_return(new_user_id)
               connection.should_receive(:set_user_data).with(new_user_id, "ext_user_id" => other_ext_user_id)
               user_data.set_ext_user_id(other_ext_user_id)
             end
@@ -218,12 +218,12 @@ module Motivoo
       
       context "when current user was authenticated" do
         let!(:user_data) do
-          connection.stub!(:find_or_create_user_data).and_return({"ext_user_id" => ext_user_id, "cohorts" => cohorts})
+          connection.stub(:find_or_create_user_data).and_return({"ext_user_id" => ext_user_id, "cohorts" => cohorts})
           UserData.deserialize_from(env_with_user_id, connection).first
         end
         
         before(:each) do
-          connection.stub!(:generate_user_id).and_return(new_user_id)
+          connection.stub(:generate_user_id).and_return(new_user_id)
         end
         
         it "should create and a new user data id" do
@@ -250,7 +250,7 @@ module Motivoo
       
       context "when current user was not authenticated" do
         let!(:user_data) do
-          connection.stub!(:find_or_create_user_data).and_return({})
+          connection.stub(:find_or_create_user_data).and_return({})
           UserData.deserialize_from(env_with_user_id, connection).first
         end
         

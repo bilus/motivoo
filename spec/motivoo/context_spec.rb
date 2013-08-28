@@ -5,20 +5,20 @@ module Motivoo
   describe Context do
     context "when it is created" do
       let!(:connection) do 
-        connection = mock("connection")
-        Connection.stub!(:instance).and_return(connection)
+        connection = double("connection")
+        Connection.stub(:instance).and_return(connection)
         connection
       end
       
       let!(:user_data) do
-        user_data = mock("user_data")
-        UserData.stub!(:deserialize_from).and_return([user_data, true])
+        user_data = double("user_data")
+        UserData.stub(:deserialize_from).and_return([user_data, true])
         user_data
       end
       
       let!(:tracker) do
-        tracker = mock("tracker")
-        Tracker.stub!(:new).and_return(tracker)
+        tracker = double("tracker")
+        Tracker.stub(:new).and_return(tracker)
         tracker
       end
       
@@ -26,16 +26,16 @@ module Motivoo
       let(:updated_env) { double("updated_env") }
       
       let!(:request) do
-        request = mock("request")
-        Rack::Request.stub!(:new).and_return(request)
+        request = double("request")
+        Rack::Request.stub(:new).and_return(request)
         request
       end
       
       let(:response) { double("response", finish: nil) }
       
       before(:each) do
-        tracker.stub!(:serialize_into).and_return(updated_env)
-        user_data.stub!(:serialize_into).and_return(response)
+        tracker.stub(:serialize_into).and_return(updated_env)
+        user_data.stub(:serialize_into).and_return(response)
       end
       
       it "should get connection instance" do
@@ -55,7 +55,7 @@ module Motivoo
       
       it "should inform tracker whether the user is an existing one" do
         existing_user = double("existing_user_flag")
-        UserData.stub!(:deserialize_from).and_return([user_data, existing_user])
+        UserData.stub(:deserialize_from).and_return([user_data, existing_user])
         Tracker.should_receive(:new).with(anything, anything, existing_user: existing_user).and_return(tracker)
         Context.create(env)
       end
@@ -71,7 +71,7 @@ module Motivoo
       end
 
       it "should yield" do
-        block = mock("block")
+        block = double("block")
         block.should_receive(:call)
         Context.create(env) do
           block.call

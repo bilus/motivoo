@@ -36,6 +36,7 @@ Motivoo.configure do |config|
   config.before_activation do |event, env, tracker, user|
     case event
     when :buy
+      puts "buy"
       time_since_first_visit = Time.now - user.first_visit_at
       ttb = 
         if time_since_first_visit < 60
@@ -71,6 +72,16 @@ Motivoo.configure do |config|
     end
     if time_since_first_visit > FIVE_MINUTES
       tracker.retention(:back_after_five_minutes)
+    end
+  end
+  
+  config.before_tracking do |event, env, tracker, user|
+    if event == :buy
+      user["buy_count"] = (user["buy_count"] || 0) + 1
+      if user["buy_count"] >= 5
+        puts "buy_count >= 5"
+        tracker.activation(:at_least_five_purchases)
+      end
     end
   end
 end
@@ -221,6 +232,8 @@ User has been contacted!
 = haml(:_report_for_event, locals: {entries: @report.relative_activations_by(locals[:category], :signup, first_visits)})
 %h3 Activation - purchase
 = haml(:_report_for_event, locals: {entries: @report.relative_activations_by(locals[:category], :buy, first_visits)})
+%h3 Activation - at least 5 purchases
+= haml(:_report_for_event, locals: {entries: @report.relative_activations_by(locals[:category], :at_least_five_purchases, first_visits)})
 %h3 Retention - back after 2 minutes
 = haml(:_report_for_event, locals: {entries: @report.relative_retentions_by(locals[:category], :back_after_two_minutes, first_visits)})
 %h3 Retention - back after 5 minutes
