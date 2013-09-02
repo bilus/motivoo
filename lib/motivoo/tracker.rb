@@ -291,7 +291,7 @@ module Motivoo
     private
     
     def log(str)
-      puts "[MOTIVOO] #{@env['REMOTE_ADDR']} #{@user_data.user_id} #{str}"
+      puts "[MOTIVOO] #{@env['HTTP_X_REAL_IP'] || @env['REMOTE_ADDR']} #{@user_data.user_id} #{str}"
       $stdout.flush
     end
   end
