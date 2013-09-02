@@ -290,9 +290,12 @@ module Motivoo
     
     private
     
+    def remote_ip
+      (@env['HTTP_X_FORWARDED_FOR'] || "").split(",").first
+    end
+    
     def log(str)
-      puts @env.inspect
-      puts "[MOTIVOO] #{@env['HTTP_X_REAL_IP'] || @env['REMOTE_ADDR']} #{@user_data.user_id} #{str}"
+      puts "[MOTIVOO] #{remote_ip} #{@user_data.user_id} #{str}"
       $stdout.flush
     end
   end
