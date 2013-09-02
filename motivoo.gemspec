@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.name = 'motivoo'
-  s.version = '0.8.1'
+  s.version = '0.8.2'
   s.summary = 'Motivoo - AARRR Rack middleware.'
   s.description = ''
 
