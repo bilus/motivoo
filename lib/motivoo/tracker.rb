@@ -68,6 +68,7 @@ module Motivoo
     # This id is not visible in the cookies.
     #
     def set_ext_user_id(ext_user_id)
+      log "set_ext_user_id(#{ext_user_id.to_s})"
       old_user_id = @user_data.user_id
       @user_data.set_ext_user_id(ext_user_id)
       invoke_repeat_visit_callback if @user_data.user_id != old_user_id
@@ -77,6 +78,7 @@ module Motivoo
     # It doesn't trigger on_repeat_visit callback.
     #
     def act_as(ext_user_id)
+      log "act_as(#{ext_user_id.to_s})"
       self.clone.act_as!(ext_user_id)
     end
     
@@ -206,6 +208,8 @@ module Motivoo
       callback_result = invoke_before_callbacks(category, event)
       return if callback_result.skip?
       
+      log "#{category} #{event}"
+      
       if @user_data.cohorts.empty?
         Tracker.cohorts.each_pair do |cohort_category, generator| 
           cohort = generate_cohort(generator, date_override)
@@ -282,6 +286,12 @@ module Motivoo
       ctx = CohortContext.new
       ctx.today = date_override if date_override
       ctx.run(&generator)
+    end
+    
+    private
+    
+    def log(str)
+      puts "[MOTIVOO] #{@env['REMOTE_ADDR']} #{@user_data.user_id} #{str}"
     end
   end
 end
