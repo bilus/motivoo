@@ -11,9 +11,9 @@ module Motivoo
     
     # Creates the context for a given block. Used by Rack::Motivoo middleware.
     #
-    def self.create(env)
+    def self.create!(env)
       connection = Connection.instance
-      user_data, is_existing_user = UserData.deserialize_from(env, connection)
+      user_data, is_existing_user = UserData.deserialize_from!(env, connection)
       tracker = Tracker.new(user_data, connection, existing_user: is_existing_user)
       request = Rack::Request.new(tracker.serialize_into(env))
       

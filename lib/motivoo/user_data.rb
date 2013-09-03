@@ -11,7 +11,7 @@ module Motivoo
    
     # Creates a UserData instance based on a Rack env.
     #
-    def UserData.deserialize_from(env, connection)
+    def UserData.deserialize_from!(env, connection)
       user_id, user_data, is_existing_user = 
         if (existing_user_id = Rack::Request.new(env).cookies[USER_ID_COOKIE])
           [existing_user_id, connection.find_or_create_user_data(existing_user_id), true]

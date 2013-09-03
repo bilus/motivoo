@@ -14,7 +14,7 @@ module Rack
     end
     
     def call(env)
-      ::Motivoo::Context.create(env) do |tracker, request|
+      ::Motivoo::Context.create!(env) do |tracker, request|
         if track_path?(request)
           ::Motivoo::Visit.track(tracker, request) do |tracker, request|
             call_wrapped_app(request) 

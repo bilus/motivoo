@@ -5,7 +5,7 @@ require 'rack/motivoo'
 describe "Rack middleware" do
   let!(:tracker) do
     tracker = double("tracker").as_null_object
-    Motivoo::Context.stub(:create).and_yield(tracker, request)
+    Motivoo::Context.stub(:create!).and_yield(tracker, request)
     tracker
   end
   
@@ -31,7 +31,7 @@ describe "Rack middleware" do
   end
   
   it "should create context" do
-    Motivoo::Context.should_receive(:create).and_yield(tracker, request)
+    Motivoo::Context.should_receive(:create!).and_yield(tracker, request)
     call(middleware, "/")
   end
     
