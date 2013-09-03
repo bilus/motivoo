@@ -10,6 +10,8 @@ module Motivoo
     attr_accessor :mongo_port
     attr_accessor :mongo_user
     attr_accessor :mongo_password
+
+    attr_accessor :bot_protect_js
     
     def initialize
       @mongo_host = "localhost"
@@ -22,6 +24,7 @@ module Motivoo
       @mongo_port = nil
       @mongo_user = nil
       @mongo_password = nil
+      @bot_protect_js = nil
     end
     
     def method_missing(meth, *args, &block)

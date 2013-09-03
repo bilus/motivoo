@@ -15,6 +15,8 @@ users = {
 }
 
 Motivoo.configure do |config|
+  config.bot_protect_js = true
+  
   config.mongo_host = "localhost"
   
   config.define_cohort("app_version") do
