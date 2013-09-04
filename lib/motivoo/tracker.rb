@@ -295,8 +295,10 @@ module Motivoo
     end
     
     def log(str)
-      puts "[MOTIVOO] #{remote_ip} #{@user_data.user_id} #{str}"
-      $stdout.flush
+      if ENV["RACK_ENV"] == "production"
+        puts "[MOTIVOO] #{remote_ip} #{@user_data.user_id} #{str}"
+        $stdout.flush
+      end
     end
   end
 end

@@ -10,18 +10,24 @@ module Motivoo
     attr_accessor :mongo_port
     attr_accessor :mongo_user
     attr_accessor :mongo_password
+
+    attr_accessor :bot_protect_js
+    attr_accessor :bot_protect_path
+    attr_accessor :bot_protect_js_path
     
     def initialize
-      @mongo_host = "localhost"
-      @mongo_db = "motivoo"
+      reset!
     end
 
     def reset!
-      @mongo_host = nil
-      @mongo_db = nil
+      @mongo_host = "localhost"
+      @mongo_db = "motivoo"
       @mongo_port = nil
       @mongo_user = nil
       @mongo_password = nil
+      @bot_protect_js = nil
+      @bot_protect_path = "/motivoo/"
+      @bot_protect_js_path = "/motivoo/m.js"
     end
     
     def method_missing(meth, *args, &block)

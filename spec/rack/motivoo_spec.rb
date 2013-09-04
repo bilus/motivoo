@@ -5,6 +5,7 @@ require 'rack/motivoo'
 describe "Rack middleware" do
   let!(:tracker) do
     tracker = double("tracker").as_null_object
+    Motivoo::Context.stub(:create!).and_yield(tracker, request)
     Motivoo::Context.stub(:create).and_yield(tracker, request)
     tracker
   end
@@ -26,17 +27,41 @@ describe "Rack middleware" do
     request
   end
   
-  def call(middleware, path) 
-    middleware.call(Rack::MockRequest.env_for(path))
+  def call(middleware, path, opts = {}) 
+    middleware.call(Rack::MockRequest.env_for(path, opts))
   end
   
-  it "should create context" do
-    Motivoo::Context.should_receive(:create).and_yield(tracker, request)
+  it "should force-create context" do
+    Motivoo::Context.should_receive(:create!).and_yield(tracker, request)
     call(middleware, "/")
   end
     
   it "should track visit" do
     Motivoo::Visit.should_receive(:track).with(tracker, request).and_yield(tracker, request)
     call(middleware, "/")
+  end
+  
+  context "with anti-bot protection enabled" do
+    let(:middleware) do
+      Motivoo.configure do |config|
+        config.bot_protect_js = true
+      end
+      Rack::Motivoo.new(app) 
+     end
+     
+    it "should conditionally create context" do
+      Motivoo::Context.should_receive(:create).and_yield(tracker, request)
+      call(middleware, "/")
+    end
+    
+    it "should force-create context for POST /motivoo/" do
+      Motivoo::Context.should_receive(:create!).and_yield(tracker, request)
+      call(middleware, "/motivoo/", method: :post)
+    end
+    
+    it "should insert JS doing POST to /motivoo/ before the closing BODY tag" do
+      *_, body = call(middleware, "/")
+      body.should include("<script>")
+    end
   end
 end

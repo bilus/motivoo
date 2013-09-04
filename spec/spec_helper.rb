@@ -10,10 +10,12 @@ require 'rack/motivoo'
 require 'rack/test'
 
 def at(time_str) 
+  result = nil
   Timecop.freeze(Time.parse(time_str)) do
     # print "\nat #{time_str} "
-    yield
+    result = yield
   end
+  result
 end
 
 def mock_event_handler
@@ -30,19 +32,26 @@ end
 RSpec.configure do |config|
   config.before(:each) do
     Motivoo::Connection.instance.clear!
+    Motivoo.configuration.reset!
   end
 end
 
 module SpecHelpers
+  def response_from(opts)
+    if opts.is_a?(Rack::Response)
+      res = opts
+      {"HTTP_COOKIE" => (res["Set-Cookie"] || "").split("\n").join(";")}
+    else
+      opts || {}
+    end
+  end
+  
   def get(path, opts = {})
-    options = 
-      if opts.is_a?(Rack::Response)
-        res = opts
-        {"HTTP_COOKIE" => (res["Set-Cookie"] || "").split("\n").join(";")}
-      else
-        opts
-      end
-    Rack::MockRequest.new(app).get(path, options)
+    Rack::MockRequest.new(app).get(path, response_from(opts))
+  end
+  
+  def post(path, opts = {})
+    Rack::MockRequest.new(app).post(path, response_from(opts))
   end
   
   def report

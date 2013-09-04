@@ -1,5 +1,6 @@
 require_relative '../motivoo/context'
 require_relative '../motivoo/visit'
+require_relative './bot_protection'
 
 module Rack
   
@@ -11,16 +12,17 @@ module Rack
   class Motivoo
     def initialize(app)
       @app = app
+      @app = BotProtection.maybe_protect(app)
     end
     
     def call(env)
-      ::Motivoo::Context.create(env) do |tracker, request|
+      @app.with_context_for(env) do |tracker, request|
         if track_path?(request)
           ::Motivoo::Visit.track(tracker, request) do |tracker, request|
-            call_wrapped_app(request) 
+            app_response_to(request) 
           end
         else
-          call_wrapped_app(request)
+          app_response_to(request)
         end
       end
     end
@@ -37,9 +39,9 @@ module Rack
       !is_binary
     end
     
-    def call_wrapped_app(request)
-      event, headers, body = @app.call(request.env)
-      Response.new(body, event, headers)
+    def app_response_to(request)
+      status, headers, body = @app.call(request.env)
+      Response.new(body, status, headers)
     end
   end
 end

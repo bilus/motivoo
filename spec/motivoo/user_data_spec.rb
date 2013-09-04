@@ -12,24 +12,48 @@ module Motivoo
 
     let(:response) { double("response") }
     
-    context "when deserializing from env" do
+    context "#deserialize_from!" do
       let(:user_data_hash) { {"cohorts" => cohorts} }
 
       it "should find or create user data if user id is in cookies" do
         connection.should_receive(:find_or_create_user_data).with(user_id).and_return(user_data_hash)
-        user_data, _ = UserData.deserialize_from(env_with_user_id, connection)
+        user_data, _ = UserData.deserialize_from!(env_with_user_id, connection)
         user_data.cohorts.should == cohorts
       end
       
       it "should create user data set if no user id" do
         connection.should_receive(:generate_user_id).and_return(user_id)
-        user_data, _ = UserData.deserialize_from(env_no_user_id, connection)
+        user_data, _ = UserData.deserialize_from!(env_no_user_id, connection)
         user_data.cohorts.should == {}
       end
       
       it "should make it possible to tell if it's a new or existing user id" do
         connection.stub(:generate_user_id)
         connection.stub(:find_or_create_user_data).and_return({})
+        _, is_existing_user = UserData.deserialize_from!(env_no_user_id, connection)
+        is_existing_user.should be_false
+        _, is_existing_user = UserData.deserialize_from!(env_with_user_id, connection)
+        is_existing_user.should be_true
+      end
+    end
+
+    context "#deserialize_from" do
+      let(:user_data_hash) { {"cohorts" => cohorts} }
+      let(:connection) { double("connection", find_or_create_user_data: user_data_hash) }
+
+      it "should find user data if user id is in cookies" do
+        connection.should_receive(:find_or_create_user_data).with(user_id).and_return(user_data_hash)
+        user_data, _ = UserData.deserialize_from(env_with_user_id, connection)
+        user_data.cohorts.should == cohorts
+      end
+      
+      it "should never create user data even if no user id" do
+        connection.should_not_receive(:generate_user_id)
+        user_data, _ = UserData.deserialize_from(env_no_user_id, connection)
+        user_data.should be_nil
+      end
+      
+      it "should make it possible to tell if it's a new or existing user id" do
         _, is_existing_user = UserData.deserialize_from(env_no_user_id, connection)
         is_existing_user.should be_false
         _, is_existing_user = UserData.deserialize_from(env_with_user_id, connection)
@@ -37,7 +61,7 @@ module Motivoo
       end
     end
 
-    context "when serializing into response" do
+    context "#serialize_into" do
       let(:new_user_id) { "new_user_id" }
       
       before(:each) do
@@ -46,19 +70,19 @@ module Motivoo
 
       it "should generate a new user id if user id wasn't in cookies" do
         connection.stub(:generate_user_id).and_return(new_user_id)
-        user_data, _ = UserData.deserialize_from(env_no_user_id, connection)
+        user_data, _ = UserData.deserialize_from!(env_no_user_id, connection)
         response.should_receive(:set_cookie).with(anything, hash_including(value: new_user_id))
         user_data.serialize_into(response)
       end
       
       it "should set user id cookie if it was" do
-        user_data, _ = UserData.deserialize_from(env_with_user_id, connection)
+        user_data, _ = UserData.deserialize_from!(env_with_user_id, connection)
         response.should_receive(:set_cookie).with(anything, hash_including(value: user_id))
         user_data.serialize_into(response)
       end
     end
     
-    context "when assigning to cohort" do
+    context "#assign_to" do
       let(:cohort_category) { "cohort_category" }
       let(:cohort) { "cohort" }
       let(:user_data) { UserData.new(user_id, {}, connection)}
@@ -82,7 +106,7 @@ module Motivoo
       end
     end
     
-    context "when a user authenticates" do
+    context "#set_ext_user_id(id) -- user logs in" do
       let(:ext_user_id) { "ext_user_id" }
       let(:other_ext_user_id) { "other_ext_user_id" }
       let(:new_user_id) { "new_user_id" }
@@ -96,7 +120,7 @@ module Motivoo
         
         let!(:user_data) do
           connection.stub(:find_or_create_user_data).and_return({})
-          UserData.deserialize_from(env_with_user_id, connection).first
+          UserData.deserialize_from!(env_with_user_id, connection).first
         end
 
         it "should search for the user's record" do
@@ -152,7 +176,7 @@ module Motivoo
       context "when current user was authenticated" do
         let!(:user_data) do
           connection.stub(:find_or_create_user_data).and_return({"ext_user_id" => ext_user_id})
-          UserData.deserialize_from(env_with_user_id, connection).first
+          UserData.deserialize_from!(env_with_user_id, connection).first
         end
 
         context "if it's the same external user" do
@@ -212,14 +236,14 @@ module Motivoo
       end
     end
     
-    context "when external user logs out" do
+    context "#set_ext_user_id(nil) -- user logs out" do
       let(:new_user_id) { "new_user_id" }
       let(:ext_user_id) { "ext_user_id" }
       
       context "when current user was authenticated" do
         let!(:user_data) do
           connection.stub(:find_or_create_user_data).and_return({"ext_user_id" => ext_user_id, "cohorts" => cohorts})
-          UserData.deserialize_from(env_with_user_id, connection).first
+          UserData.deserialize_from!(env_with_user_id, connection).first
         end
         
         before(:each) do
@@ -251,7 +275,7 @@ module Motivoo
       context "when current user was not authenticated" do
         let!(:user_data) do
           connection.stub(:find_or_create_user_data).and_return({})
-          UserData.deserialize_from(env_with_user_id, connection).first
+          UserData.deserialize_from!(env_with_user_id, connection).first
         end
         
         it "should do nothing" do
@@ -260,7 +284,7 @@ module Motivoo
       end
     end
     
-    context "user-defined fields" do
+    context "#[]= -- user defined fields" do
       let(:key) { "key" }
       let(:sample_value) { "sample_value" }
       let(:user_data) { UserData.new(user_id, {}, connection)}
