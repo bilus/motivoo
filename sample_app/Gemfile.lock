@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    motivoo (0.9.4)
+    motivoo (0.9.5)
       bson_ext
       mongo
       nullobject
