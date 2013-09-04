@@ -37,6 +37,30 @@ module Motivoo
       end
     end
 
+    context "#deserialize_from" do
+      let(:user_data_hash) { {"cohorts" => cohorts} }
+      let(:connection) { double("connection", find_or_create_user_data: user_data_hash) }
+
+      it "should find user data if user id is in cookies" do
+        connection.should_receive(:find_or_create_user_data).with(user_id).and_return(user_data_hash)
+        user_data, _ = UserData.deserialize_from(env_with_user_id, connection)
+        user_data.cohorts.should == cohorts
+      end
+      
+      it "should never create user data even if no user id" do
+        connection.should_not_receive(:generate_user_id)
+        user_data, _ = UserData.deserialize_from(env_no_user_id, connection)
+        user_data.should be_nil
+      end
+      
+      it "should make it possible to tell if it's a new or existing user id" do
+        _, is_existing_user = UserData.deserialize_from(env_no_user_id, connection)
+        is_existing_user.should be_false
+        _, is_existing_user = UserData.deserialize_from(env_with_user_id, connection)
+        is_existing_user.should be_true
+      end
+    end
+
     context "#serialize_into" do
       let(:new_user_id) { "new_user_id" }
       

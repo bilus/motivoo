@@ -9,16 +9,31 @@ module Motivoo
     EXT_USER_ID_KEY = "ext_user_id"
     COHORTS_KEY = "cohorts"
    
-    # Creates a UserData instance based on a Rack env.
+    # Retuns a UserData instance based on a Rack env.
+    # If no user id in cookies, it generates a new one.
     #
     def UserData.deserialize_from!(env, connection)
-      user_id, user_data, is_existing_user = 
+      user_data, is_existing_user = UserData.deserialize_from(env, connection)
+      if user_data
+        [user_data, is_existing_user]
+      else
+        new_user_data = UserData.new(connection.generate_user_id, {}, connection)
+        [new_user_data, false]
+      end
+    end
+    
+    # Retuns a UserData instance based on a Rack env.
+    # If no user id in cookies, it won't generate a new one.
+    #
+    def UserData.deserialize_from(env, connection)
+      user_data, is_existing_user = 
         if (existing_user_id = Rack::Request.new(env).cookies[USER_ID_COOKIE])
-          [existing_user_id, connection.find_or_create_user_data(existing_user_id), true]
+          user_data = UserData.new(existing_user_id, connection.find_or_create_user_data(existing_user_id), 
+            connection)
+          [user_data, true]
         else
-          [connection.generate_user_id, {}, false]
+          [nil, false]
         end
-      [UserData.new(user_id, user_data, connection), is_existing_user]
     end
     
     # Updates Rack::Response to facilitate user tracking.

@@ -12,7 +12,8 @@ Gem::Specification.new do |s|
   s.add_dependency('rack')
   s.add_dependency('mongo')
   s.add_dependency('bson_ext')
-
+  s.add_dependency('nullobject')
+  
   s.files = Dir['README.md', 'MIT-LICENSE', 'lib/**/*', 'spec/**/*']
   s.has_rdoc = false
 

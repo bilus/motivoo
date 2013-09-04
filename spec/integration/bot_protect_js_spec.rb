@@ -31,7 +31,7 @@ describe "Javascript anti-bot/crawler/spider protection" do
     end
   end
   
-  before(:all) do
+  before(:each) do
     Motivoo.configure do |config|
       config.bot_protect_js = true
     end
@@ -49,7 +49,7 @@ describe "Javascript anti-bot/crawler/spider protection" do
   end
   
   context "after motivoo context is created" do
-    let(:user) { at("2012-10-12 15:00") { post("/motivoo/") } }
+    let(:user) { at("2012-12-12 15:00") { post("/motivoo/") } }
 
     it "should count first visits" do
       u = user
