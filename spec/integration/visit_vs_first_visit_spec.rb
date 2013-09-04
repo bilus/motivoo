@@ -28,6 +28,12 @@ describe "Visit vs. first visit" do
           [200, {'Content-Type' => 'text/plain'}, ["Hello"]]
         }
       end
+      
+      map "/404" do
+        run lambda { |env|
+          [404, {'Content-Type' => 'text/plain'}, ["Not found"]]
+        }
+      end
     end
     
   end
@@ -66,5 +72,21 @@ describe "Visit vs. first visit" do
     at("2012-12-12 15:00") { user = get("/login") }
     at("2012-12-12 15:00") { get("/", user) }
     report.acquisitions_by(:month, :first_visit).should == {"2012-10" => 1}
+  end
+
+  context "status != ok" do
+    it "should not count visits for non 200" do
+      user = nil
+      at("2012-12-12 15:00") { user = get("/404") }
+      at("2012-12-12 15:00") { get("/404", user) }
+      report.acquisitions_by(:month, :visit).should == {}
+    end
+
+    it "should not count first visits for non 200" do
+      user = nil
+      at("2012-12-12 15:00") { user = get("/404") }
+      at("2012-12-12 15:00") { get("/404", user) }
+      report.acquisitions_by(:month, :first_visit).should == {}
+    end
   end
 end

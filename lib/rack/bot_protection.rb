@@ -74,7 +74,7 @@ module Rack
       end
         
       def maybe_inject_bot_protect_script(status, headers, body)
-        if headers["Content-Type"].include?("text/html")
+        if headers["Content-Type"].include?("text/html") && status.to_i == 200
           se = read_bot_protect_script
           body.each {|b| b.gsub!(/(<\/head>|<\/body>|<\/html\/>)/i, "#{se}" + '\1')}
           headers["Content-Length"] = (headers["Content-Length"].to_i + se.length).to_s

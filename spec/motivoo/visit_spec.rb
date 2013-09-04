@@ -6,7 +6,7 @@ module Motivoo
   describe Visit do
     let(:tracker) { double("tracker").as_null_object }
     let(:request) { double("request").as_null_object }
-    let(:response) { double("response").as_null_object }
+    let(:response) { double("response", status: 200).as_null_object }
 
     it "should yield" do
       yielded = false
@@ -54,6 +54,12 @@ module Motivoo
           tracker.should_not_receive(:acquisition)
           expect { Visit.track(tracker, request) { raise "Error." } }.to raise_error
         end
+        
+        it "should not track for non-200 response status" do
+          response.stub(:status).and_return(404)
+          tracker.should_not_receive(:acquisition)
+          Visit.track(tracker, request) { response }
+        end
       end
 
       context "when visit already tracked" do
@@ -93,8 +99,14 @@ module Motivoo
         tracker.should_receive(:acquisition).with(:first_visit)
         Visit.track(tracker, request) { response }
       end
+
+      it "should not track for non-200 response status" do
+        response.stub(:status).and_return(404)
+        tracker.should_not_receive(:acquisition)
+        Visit.track(tracker, request) { response }
+      end
     end
- 
+
     it "should return response" do
       Visit.track(tracker, request) { response }.should == response
     end
