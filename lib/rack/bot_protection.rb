@@ -44,7 +44,7 @@ module Rack
           end
         else
           status, headers, body = @app.call(env)
-          inject_bot_protect_script(status, headers, body)
+          maybe_inject_bot_protect_script(status, headers, body)
         end
       end
 
@@ -73,10 +73,12 @@ module Rack
         render_asset("script.html.erb")
       end
         
-      def inject_bot_protect_script(status, headers, body)
-        se = read_bot_protect_script
-        body.each {|b| b.gsub!(/(<\/head>|<\/body>|<\/html\/>)/i, "#{se}" + '\1')}
-        headers["Content-Length"] = (headers["Content-Length"].to_i + se.length).to_s
+      def maybe_inject_bot_protect_script(status, headers, body)
+        if headers["Content-Type"].include?("text/html")
+          se = read_bot_protect_script
+          body.each {|b| b.gsub!(/(<\/head>|<\/body>|<\/html\/>)/i, "#{se}" + '\1')}
+          headers["Content-Length"] = (headers["Content-Length"].to_i + se.length).to_s
+        end
         [status, headers, body]
       end
     
