@@ -38,6 +38,10 @@ module Motivoo
       let(:week_cohort) { "2013(1)" }
       let(:day_cohort) { "2013-01-01" }
       
+      after(:each) do
+        Tracker.remove_cohort!("source")
+      end
+      
       it "should find out which cohorts the user is assigned to" do
         user_data.should_receive(:cohorts).and_return("month" => month_cohort, "week" => week_cohort, "day" => day_cohort)
         track.call
@@ -49,6 +53,18 @@ module Motivoo
         connection.should_receive(:track).with(expected_category, expected_event, "week", week_cohort)
         connection.should_receive(:track).with(expected_category, expected_event, "day", day_cohort)
         at("2013-01-01 12:00") { track.call }
+      end
+      
+      it "should make it possible to create cohorts based on env" do
+        source = double("source")
+        env = tracker.serialize_into({source: source})
+        t = Tracker.deserialize_from(env)
+        Tracker.define_cohort("source") do |env|
+          env[:source]
+        end
+        
+        user_data.should_receive(:assign_to).with("source", source)
+        track.call
       end
       
       context "given user is not assigned to any cohorts yet" do
@@ -89,7 +105,7 @@ module Motivoo
         end
       
         it "should not track nil cohorts" do
-          Tracker.stub(:cohorts).and_return("seen_promotion" => lambda { nil })
+          Tracker.stub(:cohorts).and_return("seen_promotion" => proc { nil })
           user_data.should_not_receive(:assign_to).with("seen_promotion", nil)
           user_data.should_not_receive(:track).with(anything, anything, "seen_promotion", nil)
           at("2013-01-01 12:00") { track.call }
@@ -121,7 +137,7 @@ module Motivoo
           at("2013-01-01 12:00") { track.call }
         end
 
-        it "should track using the existing cohort only" do
+        it "should track using the existing cohorts only" do
           connection.should_receive(:track).with(expected_category, expected_event, "day", day_cohort)
           connection.should_not_receive(:track).with(expected_category, expected_event, "month", anything)
           connection.should_not_receive(:track).with(expected_category, expected_event, "week", anything)
@@ -339,11 +355,11 @@ module Motivoo
     
     context "when asked to act as a user" do
       let(:ext_user_id) { "ext_user_id" }
-      let(:new_user_data) { double("new_user_data") }
+      let(:new_user_data) { double("new_user_data", set_ext_user_id: nil, :[] => nil, :[]= => nil, cohorts: {}, assign_to: nil) }
       let(:callback) { mock_event_handler }
       
       before(:each) do
-        UserData.stub(:new).and_return(new_user_data)
+        user_data.stub(:clone).and_return(new_user_data)
         Tracker.before_acquisition(&callback)
       end
     

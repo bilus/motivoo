@@ -10,4 +10,5 @@ group :test do
   gem 'timecop'
   gem 'rack-test'
   gem 'sinatra'
+  gem 'awesome_print'
 end

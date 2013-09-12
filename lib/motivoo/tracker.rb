@@ -9,9 +9,9 @@ module Motivoo
     DEFAULT_COHORTS = {
       # Note: 'today' method is provided by Tracker. Use it instead of Date.today to make it possible for tracker to track events
       # on a different date than the current one.
-      "day" => lambda { today.strftime("%Y-%m-%d") },
-      "month" => lambda { today.strftime("%Y-%m") },
-      "week" => lambda { date = today; "#{date.year}(#{date.cweek})" }
+      "day" => proc { today.strftime("%Y-%m-%d") },
+      "month" => proc { today.strftime("%Y-%m") },
+      "week" => proc { date = today; "#{date.year}(#{date.cweek})" }
     }
     
     @@callbacks = {}
@@ -28,9 +28,9 @@ module Motivoo
     # @example
     #   Tracker.define_cohort("release") { "1.0.2" }
     #
-    def Tracker.define_cohort(name, &block)
+    def Tracker.define_cohort(name)
       raise "Cohort #{name} already defined." if @@cohorts.member?(name)
-      @@cohorts[name] = block
+      @@cohorts[name] = Proc.new # Let users use define_cohort without any block arguments.
     end
     
     # Creates a tracker.
@@ -116,7 +116,6 @@ module Motivoo
         
         begin
           return if invoke_callback(@@callbacks[:before_tracking], event).skip?
-          
           if allow_repeated
             do_track(category, event, on_date)
           else
@@ -179,28 +178,10 @@ module Motivoo
       key = "#{category.to_s}##{event.to_s}"
       # puts "ensure_track_once key = #{key.inspect} #{@user_data.inspect}"
       already_tracked = @user_data[key]
-      # puts "already_tracked? #{already_tracked.inspect}"
+      # puts "already_tracked? #{already_tracked}"
       unless already_tracked
         @user_data[key] = true
         yield
-      end
-    end
-    
-    class CohortContext
-      def initialize(*args)
-        @args = args
-      end
-      
-      def run(&block)
-        instance_exec(*@args, &block)
-      end
-      
-      def today=(date)
-        @today_override = date
-      end
-      
-      def today
-        @today_override || Date.today
       end
     end
     
@@ -282,8 +263,26 @@ module Motivoo
       self
     end
     
+    class CohortContext
+      def initialize(*args)
+        @args = args
+      end
+      
+      def run(&block)
+        instance_exec(*@args, &block)
+      end
+      
+      def today=(date)
+        @today_override = date
+      end
+      
+      def today
+        @today_override || Date.today
+      end
+    end
+    
     def generate_cohort(generator, date_override = nil)
-      ctx = CohortContext.new
+      ctx = CohortContext.new(@env)
       ctx.today = date_override if date_override
       ctx.run(&generator)
     end

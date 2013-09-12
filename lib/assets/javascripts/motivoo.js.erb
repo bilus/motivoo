@@ -8,8 +8,11 @@ function initMotivooTracking() {
         // code for IE6, IE5
         xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
     }
-
-    xmlhttp.open("POST", "<%= ::Motivoo.configuration.bot_protect_path %>", true);
+    
+    var qrStr = window.location.search;
+    qrStr = qrStr.split("?")[1]
+    // Pass on query string because user may be using it to track referrals.
+    xmlhttp.open("POST", "<%= ::Motivoo.configuration.bot_protect_path %>" + (qrStr ? "?" + qrStr : ""), true);
     xmlhttp.send();
 }
 

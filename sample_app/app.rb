@@ -35,6 +35,11 @@ Motivoo.configure do |config|
     "some value"
   end
   
+  config.define_cohort("referrer") do |env|
+    puts env.inspect
+    Rack::Request.new(env).params["ref"] || "Unknown"
+  end
+  
   config.before_activation do |event, env, tracker, user|
     case event
     when :buy
@@ -183,10 +188,11 @@ User has been contacted!
 
 @@report
 /= haml(:_report_for_category, locals: {title: "By day", category: :day}, layout: false)
-= haml(:_report_for_category, locals: {title: "By new", category: :new}, layout: false)
+/= haml(:_report_for_category, locals: {title: "By new", category: :new}, layout: false)
 /= haml(:_report_for_category, locals: {title: "By week", category: :week}, layout: false)
 /= haml(:_report_for_category, locals: {title: "By month", category: :month}, layout: false)
 /= haml(:_report_for_category, locals: {title: "By app version", category: :app_version}, layout: false)
+= haml(:_report_for_category, locals: {title: "By referrer", category: :referrer}, layout: false)
 
 
 = haml(:_report_for_time_to_buy, locals: {title: "By time to buy", category: :time_to_buy}, layout: false)

@@ -9,6 +9,8 @@ require 'rack/motivoo'
 
 require 'rack/test'
 
+require 'awesome_print'
+
 def at(time_str) 
   result = nil
   Timecop.freeze(Time.parse(time_str)) do
