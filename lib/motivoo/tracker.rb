@@ -88,6 +88,17 @@ module Motivoo
     def user_id
       @user_data.user_id
     end
+    
+    # Assigns the current user to cohorts unless they're already assigned.
+    #
+    def ensure_assigned_to_cohorts(date_override = nil)
+      if @user_data.cohorts.empty?
+        Tracker.cohorts.each_pair do |cohort_category, generator| 
+          cohort = generate_cohort(generator, date_override)
+          @user_data.assign_to(cohort_category, cohort) if cohort
+        end 
+      end      
+    end
 
     # Callback invoked before any event is tracked whether it's actually tracked or not (track_once).
     def Tracker.before_tracking(&callback)
@@ -191,12 +202,7 @@ module Motivoo
       
       log "#{category} #{event}"
       
-      if @user_data.cohorts.empty?
-        Tracker.cohorts.each_pair do |cohort_category, generator| 
-          cohort = generate_cohort(generator, date_override)
-          @user_data.assign_to(cohort_category, cohort) if cohort
-        end 
-      end      
+      ensure_assigned_to_cohorts(date_override)
       
       @user_data.cohorts.each_pair do |cohort_category, cohort|
         # When cohort is nil, it means that it shouldn't be tracked (usually, because it'll be set later into the funnel because it depends on some action of the user).
