@@ -44,14 +44,21 @@ module Motivoo
     #
     def find_or_create_user_data(user_id)
       # NOTE: The code below is designed to avoid a race condition.
-      begin
-        @user_data.insert("_id" => BSON::ObjectId(user_id)) 
-        {}  # New record.
-      rescue Mongo::OperationFailure => e
-        raise unless e.error_code == 11000 # duplicate key error index
-        reject_record_id(@user_data.find_one("_id" => BSON::ObjectId(user_id)))  # Existing record.
+      q = {"_id" => BSON::ObjectId(user_id)}
+      user_data = @user_data.find_one(q)
+      if user_data
+        reject_record_id(user_data)
+      else
+        begin
+          # Regardless whether we or some other process did the actual insert, we return an empty hash, as the record is fresh.
+          @user_data.insert(q)
+          {}
+        rescue Mongo::OperationFailure => e
+          raise unless e.error_code == 11000 # duplicate key error index
+          # Another process/thread has just inserted the record.
+          {} 
+        end
       end
-      # TODO: Using exceptions to handle this is slow and ugly. 
     end
     
     # Finds user data by an external user id.
