@@ -36,7 +36,6 @@ Motivoo.configure do |config|
   end
   
   config.define_cohort("referrer") do |env|
-    puts env.inspect
     Rack::Request.new(env).params["ref"] || "Unknown"
   end
   

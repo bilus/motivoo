@@ -1,5 +1,6 @@
 require 'nullobject'
 
+# Does no tracking whatsoever.
 module Motivoo
   class NullTracker
     include Null

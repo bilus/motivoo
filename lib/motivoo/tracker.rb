@@ -53,8 +53,13 @@ module Motivoo
     # Injects itself into the env hash (used internally to store a Tracker object in Rack env).
     #
     def serialize_into(env)
-      @env = env.dup
+      self.env = env.dup
       env.merge(HASH_KEY => self)
+    end
+    
+    # Sets env.
+    def env=(env)
+      @env = env
     end
     
     # Returns a Tracker instance from the env hash (used internally with Rack env).
@@ -93,8 +98,10 @@ module Motivoo
     #
     def ensure_assigned_to_cohorts(date_override = nil)
       if @user_data.cohorts.empty?
+        ap @user_data
         Tracker.cohorts.each_pair do |cohort_category, generator| 
           cohort = generate_cohort(generator, date_override)
+          ap(cohort_category => cohort)
           @user_data.assign_to(cohort_category, cohort) if cohort
         end 
       end      

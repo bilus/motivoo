@@ -48,6 +48,7 @@ module Motivoo
       let!(:tracker) do
         tracker = double("tracker")
         Tracker.stub(:new).and_return(tracker)
+        tracker.stub(:ensure_assigned_to_cohorts)
         tracker
       end
       
@@ -79,6 +80,11 @@ module Motivoo
       
       it "should inform tracker whether the user is an existing one" do
         Tracker.should_receive(:new).with(anything, anything, existing_user: is_existing_user).and_return(tracker)
+        action(env)
+      end
+      
+      it "should ask tracker to assign user to cohorts" do
+        tracker.should_receive(:ensure_assigned_to_cohorts)
         action(env)
       end
 
@@ -114,10 +120,10 @@ module Motivoo
     end
 
     describe "#create" do
-      let(:tracker) { double("tracker", serialize_into: updated_env) }
+      let(:tracker) { double("tracker", serialize_into: updated_env, ensure_assigned_to_cohorts: nil) }
       let(:env) { double("env") }
       let(:updated_env) { double("updated_env") }
-      let(:user_data) { nil }
+      let(:user_data) { double("user_data", serialize_into: nil) }
       let(:is_existing_user) { false }
       
       let!(:request) do
@@ -133,19 +139,19 @@ module Motivoo
       end
    
       before(:each) do
-        UserData.stub(:deserialize_from).and_return([user_data, is_existing_user])
+        UserData.stub(:deserialize_from!).and_return([user_data, is_existing_user])
       end
       
       context "given no existing user data" do
-        let(:user_data) { double("user_data") }
+        let(:user_data) { double("user_data", serialize_into: nil) }
         let(:is_existing_user) { false }
 
         before(:each) do
-          NullTracker.stub(:instance).and_return(tracker)
+          LimitedTracker.stub(:new).and_return(tracker)
         end
         
-        it "should create a null tracker" do
-          NullTracker.should_receive(:instance).and_return(tracker)
+        it "should create a limited tracker" do
+          LimitedTracker.should_receive(:new).and_return(tracker)
           action(env)
         end
         
@@ -158,7 +164,7 @@ module Motivoo
       end
       
       context "given existing user data" do
-        let(:user_data) { {} }
+        let(:user_data) { double("user_data", serialize_into: nil) }
         let(:is_existing_user) { true }
         it_should_behave_like "a context creation method for existing user"
       end

@@ -34,10 +34,18 @@ describe "Javascript anti-bot/crawler/spider protection" do
   before(:each) do
     Motivoo.configure do |config|
       config.bot_protect_js = true
+      
+      config.define_cohort("referrer") do |env|
+        Rack::Request.new(env).params["ref"] || "Unknown"
+      end
     end
   end
   
-  context "without creating motivoo context" do
+  after(:each) do
+    Motivoo::Tracker.remove_cohort!("referrer")
+  end
+  
+  context "without call to JS" do
     let(:user) { nil }
 
     it "should not count visits" do
@@ -48,7 +56,7 @@ describe "Javascript anti-bot/crawler/spider protection" do
     end
   end
   
-  context "after motivoo context is created" do
+  context "without call to JS" do
     let(:user) { at("2012-12-12 15:00") { post("/motivoo/") } }
 
     it "should count first visits" do
@@ -57,5 +65,13 @@ describe "Javascript anti-bot/crawler/spider protection" do
       at("2012-12-12 15:00") { get("/", u) }
       report.acquisitions_by(:month, :first_visit).should == {"2012-12" => 1}
     end
+  end
+
+  it "should remember user's original cohorts" do
+    u = nil
+    at("2012-12-12 15:00") { u = get("/?ref=ABC", u) }
+    at("2012-12-12 15:00") { post("/motivoo/", u) }
+
+    report.acquisitions_by(:referrer, :first_visit).should == {"ABC" => 1}
   end
 end

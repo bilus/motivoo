@@ -50,6 +50,8 @@ module Rack
 
       def with_context_for(env, &block)
         m = create_context_for_first_visit?(env) ? :create! : :create
+
+        # Actual tracking using NullTracker or real Tracker.
         ::Motivoo::Context.send(m, env, &block)
       end
     
