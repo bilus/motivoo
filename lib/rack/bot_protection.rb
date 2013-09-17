@@ -1,5 +1,8 @@
 require 'erb'
 
+require 'motivoo/tracker'
+require 'motivoo/limited_tracker'
+
 module Rack
   class BotProtection
     def self.maybe_protect(app)
@@ -49,15 +52,21 @@ module Rack
       end
 
       def with_context_for(env, &block)
-        m = create_context_for_first_visit?(env) ? :create! : :create
+        tracker_factory = proc do |is_first_visit|
+          if !is_first_visit || track_always?(env)
+            ::Motivoo::Tracker
+          else
+            ::Motivoo::LimitedTracker
+          end
+        end
 
         # Actual tracking using NullTracker or real Tracker.
-        ::Motivoo::Context.send(m, env, &block)
+        ::Motivoo::Context.create2(env, tracker_factory, &block)
       end
     
       private
 
-      def create_context_for_first_visit?(env)
+      def track_always?(env)
         config = ::Motivoo.configuration
         env["PATH_INFO"] == config.bot_protect_path
       end

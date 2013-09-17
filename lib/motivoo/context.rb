@@ -28,6 +28,10 @@ module Motivoo
       end
     end
     
+    def self.create2(env, tracker_type_factory, &block)
+      self.do_create(env, block, &tracker_type_factory)
+    end
+    
     private
 
     def self.do_create(env, block, &tracker_type)

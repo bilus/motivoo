@@ -50,12 +50,12 @@ describe "Rack middleware" do
      end
      
     it "should conditionally create context" do
-      Motivoo::Context.should_receive(:create).and_yield(tracker, request)
+      Motivoo::Context.should_receive(:create2).and_yield(tracker, request)
       call(middleware, "/")
     end
     
-    it "should force-create context for POST /motivoo/" do
-      Motivoo::Context.should_receive(:create!).and_yield(tracker, request)
+    it "should create context for POST /motivoo/" do
+      Motivoo::Context.should_receive(:create2).and_yield(tracker, request)
       call(middleware, "/motivoo/", method: :post)
     end
     
