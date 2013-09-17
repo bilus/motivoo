@@ -3,28 +3,58 @@ require 'motivoo/context'
 
 module Motivoo
   describe Context do
-    shared_examples_for "a context creation method" do
+    describe "#create" do
+      let(:env) { double("env") }
+      let(:updated_env) { double("updated_env") }
+      
+      let!(:request) do
+        request = double("request", cookies: nil)
+        Rack::Request.stub(:new).and_return(request)
+        request
+      end
+      
+      let(:response) { double("response", finish: nil) }
+      let(:tracker) { double("tracker", serialize_into: updated_env, ensure_assigned_to_cohorts: nil) }
+      let(:tracker_factory) { proc { double("tracker_type", new: tracker) } }
+
+      let!(:user_data) do 
+        user_data = double("user_data", serialize_into: nil) 
+        UserData.stub(:deserialize_from!).and_return([user_data, is_existing_user])
+        user_data
+      end
+      let(:is_existing_user) { double("is_existing_user") }
+
+      let!(:connection) do 
+        connection = double("connection")
+        Connection.stub(:instance).and_return(connection)
+        connection
+      end
+      
+      def create_context(env, &block)
+        Context.create(env, tracker_factory, &block)
+      end
+      
       it "should serialize tracker into env" do
-        tracker.should_receive(:serialize_into).with(env).and_return(updated_env)
-        action(env)
+        # tracker.should_receive(:serialize_into).with(env).and_return(updated_env)
+        create_context(env)
       end
       
       it "should create request based on modified env" do
         Rack::Request.should_receive(:new).with(updated_env).and_return(request)
-        action(env)
+        create_context(env)
       end
 
       it "should yield" do
         block = double("block")
         block.should_receive(:call)
-        action(env) do
+        create_context(env) do
           block.call
           response
         end
       end
       
       it "should yield tracker and request" do
-        action(env) do |arg1, arg2|
+        create_context(env) do |arg1, arg2|
           arg1.should == tracker
           arg2.should == request
           response
@@ -34,139 +64,29 @@ module Motivoo
       it "should finish response and return the result" do
         result = double("result")
         response.should_receive(:finish).and_return(result)
-        action(env) { response }.should == result
+        create_context(env) { response }.should == result
       end
-    end
-    
-    shared_examples_for "a context creation method for existing user" do
-      let!(:connection) do 
-        connection = double("connection")
-        Connection.stub(:instance).and_return(connection)
-        connection
-      end
-      
-      let!(:tracker) do
-        tracker = double("tracker")
-        Tracker.stub(:new).and_return(tracker)
-        tracker.stub(:ensure_assigned_to_cohorts)
-        tracker
-      end
-      
-      let(:env) { double("env") }
-      let(:updated_env) { double("updated_env") }
-      
-      let!(:request) do
-        request = double("request")
-        Rack::Request.stub(:new).and_return(request)
-        request
-      end
-      
-      let(:response) { double("response", finish: nil) }
-      
-      before(:each) do
-        tracker.stub(:serialize_into).and_return(updated_env)
-        user_data.stub(:serialize_into).and_return(response)
-      end
-      
+
       it "should get connection instance" do
         Connection.should_receive(:instance).and_return(connection)
-        action(env)
-      end
-      
-      it "should create tracker" do
-        Tracker.should_receive(:new).with(user_data, connection, anything).and_return(tracker)
-        action(env)
-      end
-      
-      it "should inform tracker whether the user is an existing one" do
-        Tracker.should_receive(:new).with(anything, anything, existing_user: is_existing_user).and_return(tracker)
-        action(env)
+        create_context(env)
       end
       
       it "should ask tracker to assign user to cohorts" do
         tracker.should_receive(:ensure_assigned_to_cohorts)
-        action(env)
+        create_context(env)
       end
 
       it "should serialize user data to response" do
         user_data.should_receive(:serialize_into).with(response)
-        action(env) do
+        create_context(env) do
           response
         end
       end
 
-      it_should_behave_like "a context creation method"
-    end
-    
-    describe "#create!" do
-      def action(env, &block)
-        Context.create!(env, &block)
-      end
-
-      let!(:user_data) do
-        user_data = double("user_data")
-        UserData.stub(:deserialize_from!).and_return([user_data, is_existing_user])
-        user_data
-      end
-      
-      let(:is_existing_user) { double("is_existing_user") }
-      
-      it_should_behave_like "a context creation method for existing user" do
-        it "should deserialize user data" do
-          UserData.should_receive(:deserialize_from!).with(env, connection).and_return([user_data, true])
-          action(env)
-        end
-      end
-    end
-
-    describe "#create" do
-      let(:tracker) { double("tracker", serialize_into: updated_env, ensure_assigned_to_cohorts: nil) }
-      let(:env) { double("env") }
-      let(:updated_env) { double("updated_env") }
-      let(:user_data) { double("user_data", serialize_into: nil) }
-      let(:is_existing_user) { false }
-      
-      let!(:request) do
-        request = double("request")
-        Rack::Request.stub(:new).and_return(request)
-        request
-      end
-      
-      let(:response) { double("response", finish: nil) }
-      
-      def action(env, &block)
-        Context.create(env, &block)
-      end
-   
-      before(:each) do
-        UserData.stub(:deserialize_from!).and_return([user_data, is_existing_user])
-      end
-      
-      context "given no existing user data" do
-        let(:user_data) { double("user_data", serialize_into: nil) }
-        let(:is_existing_user) { false }
-
-        before(:each) do
-          LimitedTracker.stub(:new).and_return(tracker)
-        end
-        
-        it "should create a limited tracker" do
-          LimitedTracker.should_receive(:new).and_return(tracker)
-          action(env)
-        end
-        
-        it "should not serialize user data" do
-          user_data.should_not_receive(:serialize_into)
-          action(env)
-        end
-
-        it_should_behave_like "a context creation method"
-      end
-      
-      context "given existing user data" do
-        let(:user_data) { double("user_data", serialize_into: nil) }
-        let(:is_existing_user) { true }
-        it_should_behave_like "a context creation method for existing user"
+      it "should deserialize user data" do
+        UserData.should_receive(:deserialize_from!).with(env, connection).and_return([user_data, true])
+        create_context(env)
       end
     end
   end

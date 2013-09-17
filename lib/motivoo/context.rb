@@ -1,7 +1,4 @@
 require_relative 'connection'
-require_relative 'tracker'
-require_relative 'null_tracker'
-require_relative 'limited_tracker'
 require_relative 'user_data'
 require 'rack/request'
 
@@ -11,24 +8,10 @@ module Motivoo
   #
   class Context
     
-    # Creates the context for a given block. Used by Rack::Motivoo middleware.
+    # Creates the context for a given block using tracker class returned by tracker_type_factory. 
+    # Used by Rack::Motivoo middleware.
     #
-    def self.create!(env, &block)
-      self.do_create(env, block) do 
-        Tracker
-      end
-    end
-    
-    # Creates the context for a given block. Used by Rack::Motivoo middleware.
-    # If there is no existing user, it prevents tracking.
-    #
-    def self.create(env, &block)
-      self.do_create(env, block) do |is_existing_user|
-        is_existing_user ? Tracker : LimitedTracker
-      end
-    end
-    
-    def self.create2(env, tracker_type_factory, &block)
+    def self.create(env, tracker_type_factory, &block)
       self.do_create(env, block, &tracker_type_factory)
     end
     
@@ -37,7 +20,7 @@ module Motivoo
     def self.do_create(env, block, &tracker_type)
       connection = Connection.instance
       user_data, is_existing_user = UserData.deserialize_from!(env, connection)
-      tracker = create_tracker(tracker_type.call(is_existing_user), user_data, connection, existing_user: is_existing_user)
+      tracker = create_tracker(tracker_type.call(user_data, is_existing_user), user_data, connection, existing_user: is_existing_user)
       run_within_context(env, user_data, tracker, &block)
     end
     

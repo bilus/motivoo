@@ -31,8 +31,8 @@ describe "Rack middleware" do
     middleware.call(Rack::MockRequest.env_for(path, opts))
   end
   
-  it "should force-create context" do
-    Motivoo::Context.should_receive(:create!).and_yield(tracker, request)
+  it "should create context" do
+    Motivoo::Context.should_receive(:create).and_yield(tracker, request)
     call(middleware, "/")
   end
     
@@ -49,16 +49,6 @@ describe "Rack middleware" do
       Rack::Motivoo.new(app) 
      end
      
-    it "should conditionally create context" do
-      Motivoo::Context.should_receive(:create2).and_yield(tracker, request)
-      call(middleware, "/")
-    end
-    
-    it "should create context for POST /motivoo/" do
-      Motivoo::Context.should_receive(:create2).and_yield(tracker, request)
-      call(middleware, "/motivoo/", method: :post)
-    end
-    
     it "should insert JS doing POST to /motivoo/ before the closing BODY tag" do
       *_, body = call(middleware, "/")
       body.should include("<script>")

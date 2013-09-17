@@ -25,7 +25,7 @@ module Rack
       end
 
       def with_context_for(env, &block)
-        ::Motivoo::Context.create!(env, &block)
+        ::Motivoo::Context.create(env, proc { ::Motivoo::Tracker }, &block)
       end
     end
     
@@ -52,7 +52,7 @@ module Rack
       end
 
       def with_context_for(env, &block)
-        tracker_factory = proc do |is_first_visit|
+        tracker_factory = proc do |user_data, is_first_visit|
           if !is_first_visit || track_always?(env)
             ::Motivoo::Tracker
           else
@@ -61,7 +61,7 @@ module Rack
         end
 
         # Actual tracking using NullTracker or real Tracker.
-        ::Motivoo::Context.create2(env, tracker_factory, &block)
+        ::Motivoo::Context.create(env, tracker_factory, &block)
       end
     
       private
