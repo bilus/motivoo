@@ -45,7 +45,7 @@ describe "Javascript anti-bot/crawler/spider protection" do
     Motivoo::Tracker.remove_cohort!("referrer")
   end
   
-  context "without call to JS" do
+  context "without a call to JS" do
     let(:user) { nil }
 
     it "should not count visits" do
@@ -56,7 +56,7 @@ describe "Javascript anti-bot/crawler/spider protection" do
     end
   end
   
-  context "without call to JS" do
+  context "with a call to JS" do
     let(:user) { at("2012-12-12 15:00") { post("/motivoo/") } }
 
     it "should count first visits" do

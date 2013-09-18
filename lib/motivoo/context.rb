@@ -12,18 +12,16 @@ module Motivoo
     # Used by Rack::Motivoo middleware.
     #
     def self.create(env, tracker_type_factory, &block)
-      self.do_create(env, block, &tracker_type_factory)
+      connection = Connection.instance
+      user_data, is_existing_user = UserData.deserialize_from!(env, connection)
+      # ap [user_data, is_existing_user]
+      tracker = create_tracker(tracker_type_factory.call(user_data, is_existing_user), user_data, connection, existing_user: is_existing_user);
+      # ap tracker.class
+      run_within_context(env, user_data, tracker, &block)
     end
     
     private
 
-    def self.do_create(env, block, &tracker_type)
-      connection = Connection.instance
-      user_data, is_existing_user = UserData.deserialize_from!(env, connection)
-      tracker = create_tracker(tracker_type.call(user_data, is_existing_user), user_data, connection, existing_user: is_existing_user)
-      run_within_context(env, user_data, tracker, &block)
-    end
-    
     def self.create_tracker(type, user_data, connection, opts)
       type.new(user_data, connection, opts)
     end

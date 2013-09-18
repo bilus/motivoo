@@ -98,7 +98,7 @@ module Motivoo
     #
     def ensure_assigned_to_cohorts(date_override = nil)
       if @user_data.cohorts.empty?
-        ap @user_data
+        # ap @user_data
         Tracker.cohorts.each_pair do |cohort_category, generator| 
           cohort = generate_cohort(generator, date_override)
           ap(cohort_category => cohort)

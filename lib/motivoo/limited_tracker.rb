@@ -31,7 +31,7 @@ module Motivoo
     end
     
     def ensure_assigned_to_cohorts
-      ap "ensure_assigned_to_cohorts"
+      # ap "ensure_assigned_to_cohorts"
       @full_tracker.ensure_assigned_to_cohorts
     end
   end

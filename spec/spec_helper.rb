@@ -49,12 +49,10 @@ module SpecHelpers
   end
   
   def get(path, opts = {})
-    puts "get(#{path.inspect})"
     Rack::MockRequest.new(app).get(path, response_from(opts))
   end
   
   def post(path, opts = {})
-    puts "post(#{path.inspect})"
     Rack::MockRequest.new(app).post(path, response_from(opts))
   end
   

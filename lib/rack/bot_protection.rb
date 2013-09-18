@@ -52,8 +52,11 @@ module Rack
       end
 
       def with_context_for(env, &block)
-        tracker_factory = proc do |user_data, is_first_visit|
-          if !is_first_visit || track_always?(env)
+        tracker_factory = proc do |user_data|
+          if start_track?(env)
+            user_data["track"] = true
+            ::Motivoo::Tracker
+          elsif user_data["track"]
             ::Motivoo::Tracker
           else
             ::Motivoo::LimitedTracker
@@ -66,7 +69,7 @@ module Rack
     
       private
 
-      def track_always?(env)
+      def start_track?(env)
         config = ::Motivoo.configuration
         env["PATH_INFO"] == config.bot_protect_path
       end
