@@ -101,7 +101,7 @@ module Motivoo
         # ap @user_data
         Tracker.cohorts.each_pair do |cohort_category, generator| 
           cohort = generate_cohort(generator, date_override)
-          ap(cohort_category => cohort)
+          # ap(cohort_category => cohort)
           @user_data.assign_to(cohort_category, cohort) if cohort
         end 
       end      
