@@ -26,8 +26,8 @@ module Motivoo
     end
 
     def serialize_into(env)
-      env.merge(Tracker::HASH_KEY => self)
       @full_tracker.env = env
+      env.merge(Tracker::HASH_KEY => self)
     end
     
     def ensure_assigned_to_cohorts
