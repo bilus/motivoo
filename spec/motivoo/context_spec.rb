@@ -15,7 +15,7 @@ module Motivoo
       
       let(:response) { double("response", finish: nil) }
       let(:tracker) { double("tracker", serialize_into: updated_env, ensure_assigned_to_cohorts: nil) }
-      let(:tracker_factory) { proc { double("tracker_type", new: tracker) } }
+      let(:tracker_class) { proc { double("tracker_type", new: tracker) } }
 
       let!(:user_data) do 
         user_data = double("user_data", serialize_into: nil) 
@@ -31,7 +31,7 @@ module Motivoo
       end
       
       def create_context(env, &block)
-        Context.create(env, tracker_factory, &block)
+        Context.create(env, tracker_class, &block)
       end
       
       it "should serialize tracker into env" do

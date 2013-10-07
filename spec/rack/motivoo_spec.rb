@@ -11,7 +11,10 @@ describe "Rack middleware" do
   end
   
   let(:app_response) { [200, { 'Content-Type' => 'text/plain' }, ['<body>hello</body>']] }
-  let(:app) { lambda { |env| app_response } }
+  let(:app) do 
+    double("app", call: app_response, setup: tracker_class)
+  end
+  let(:tracker_class) { double("tracker_class") }
   let(:middleware) { Rack::Motivoo.new(app) }
 
   let!(:response) do 

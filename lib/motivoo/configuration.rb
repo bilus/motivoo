@@ -28,6 +28,7 @@ module Motivoo
       @bot_protect_js = nil
       @bot_protect_path = "/motivoo/"
       @bot_protect_js_path = "/motivoo/m.js"
+      @callbacks = {}
     end
     
     def method_missing(meth, *args, &block)
@@ -44,6 +45,17 @@ module Motivoo
       else
         super
       end
+    end
+    
+    def disable_tracking(&block)
+      @callbacks ||= {}
+      disable_tracking = (@callbacks[:disable_tracking] ||= [])
+      disable_tracking << block
+    end
+    
+    def disable_tracking?(env)
+      @callbacks ||= {}
+      (@callbacks[:disable_tracking] || []).any? {|callback| callback.call(env)}
     end
     
     # Define a cohort.

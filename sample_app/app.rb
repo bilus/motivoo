@@ -15,6 +15,10 @@ users = {
 }
 
 Motivoo.configure do |config|
+  config.disable_tracking do |env|
+    env["QUERY_STRING"].include?("notrack=true")
+  end
+  
   config.bot_protect_js = true
   
   config.mongo_host = "localhost"

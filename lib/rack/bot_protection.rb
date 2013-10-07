@@ -1,19 +1,20 @@
 require 'erb'
 
-require 'motivoo/tracker'
-require 'motivoo/limited_tracker'
-
 module Rack
   class BotProtection
-    def self.maybe_protect(app)
-      if ::Motivoo.configuration.bot_protect_js
-        @app = BotProtected.new(app)
-      else
-        @app = Unprotected.new(app)
-      end
+    def self.wrap(app)
+      choose_middleware.new(app)
+    end
+    
+    def self.setup(env)
+      choose_middleware.setup(env)
     end
     
     private
+    
+    def self.choose_middleware
+      ::Motivoo.configuration.bot_protect_js ? BotProtected : Unprotected
+    end
     
     class Unprotected
       def initialize(app)
@@ -24,8 +25,8 @@ module Rack
         @app.call(env)
       end
 
-      def with_context_for(env, &block)
-        ::Motivoo::Context.create(env, proc { ::Motivoo::Tracker }, &block)
+      def self.setup(env)
+        proc { true }
       end
     end
     
@@ -51,25 +52,22 @@ module Rack
         end
       end
 
-      def with_context_for(env, &block)
-        tracker_factory = proc do |user_data|
+      def self.setup(env)
+        proc do |user_data|
           if start_track?(env)
             user_data["track"] = true
-            ::Motivoo::Tracker
+            true
           elsif user_data["track"]
-            ::Motivoo::Tracker
+            true
           else
-            ::Motivoo::LimitedTracker
+            false
           end
         end
-
-        # Actual tracking using NullTracker or real Tracker.
-        ::Motivoo::Context.create(env, tracker_factory, &block)
       end
     
       private
 
-      def start_track?(env)
+      def self.start_track?(env)
         config = ::Motivoo.configuration
         env["PATH_INFO"] == config.bot_protect_path
       end
