@@ -4,6 +4,8 @@ gem 'sinatra'
 gem 'haml'
 gem 'motivoo', path: ".."
 
+gem 'awesome_print'
+
 group :development do
   gem 'thin'
 end

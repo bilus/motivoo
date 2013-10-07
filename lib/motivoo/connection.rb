@@ -26,6 +26,7 @@ module Motivoo
     # Tracks an event.
     #
     def track(category, event, cohort_category, cohort)
+      # ap(track: {category: category, event: event, cohort_category: cohort_category, cohort: cohort})
       # When changing the query, revise Connection#create_indices.
       @tracking.update({category: category, event: event, cohort_category: cohort_category, cohort: cohort}, {"$inc" => {count: 1}}, upsert: true)
     end
@@ -33,6 +34,7 @@ module Motivoo
     # Finds an event.
     #
     def find(category, event, cohort_category)
+      # ap(find: {category: category, event: event, cohort_category: cohort_category})
       # When changing the query, revise Connection#create_indices. It's less important than Connection#track while only Report uses it.
       @tracking.find(category: category, event: event, cohort_category: cohort_category).to_a.inject({}) {|a, r| a.merge(r["cohort"] => r["count"])}
     end
@@ -43,6 +45,7 @@ module Motivoo
     # Returns a hash containing user data without the primary key itself (user id).
     #
     def find_or_create_user_data(user_id)
+      # ap(find_or_create_user_data: {user_id: user_id})
       # NOTE: The code below is designed to avoid a race condition.
       q = {"_id" => BSON::ObjectId(user_id)}
       user_data = @user_data.find_one(q)
@@ -66,6 +69,7 @@ module Motivoo
     # TODO: Change it to find_user_data(query_hash), in this specific case find_user_data("ext_user_id" => ext_user_id) so UserData completely encapsulates the concept.
     #
     def find_user_data_by_ext_user_id(ext_user_id)
+      # ap(find_user_data_by_ext_user_id: {ext_user_id: ext_user_id})
       if existing_record = @user_data.find_one("ext_user_id" => ext_user_id)
         [existing_record["_id"].to_s, reject_record_id(existing_record)]
       end
@@ -75,12 +79,14 @@ module Motivoo
     # It inserts a new record to make it possible to update it using assign_cohort, set_user_data without worrying about the record's existence but technically this isn't necessary.
     #
     def generate_user_id
+      # ap(generate_user_id: {})
       @user_data.insert({}).to_s
     end
     
     # Inserts a user data object, making sure first_visit_at is set to the provided time.
     #
     def create_user_data_with_first_visit_at(first_visit_at)
+      # ap(create_user_data_with_first_visit_at: {first_visit_at: first_visit_at})
       user_id = BSON::ObjectId.from_time(first_visit_at).to_s
       find_or_create_user_data(user_id)
       user_id
@@ -89,18 +95,21 @@ module Motivoo
     # Assigns a user to a cohort.
     #
     def assign_cohort(user_id, cohort_category, cohort)
+      # ap(assign_cohort: {user_id: user_id, cohort_category: cohort_category, cohort: cohort})
       @user_data.update({"_id" => BSON::ObjectId(user_id)}, "$set" => {"cohorts.#{cohort_category}" => cohort})
     end
     
     # Sets a user-defined user data field.
     #
     def set_user_data(user_id, hash)
+      # ap(set_user_data: {user_id: user_id, hash: hash})
       @user_data.update({"_id" => BSON::ObjectId(user_id)}, "$set" => hash)
     end
     
     # Returns a user-defined user data field or nil if record not found.
     #
     def get_user_data(user_id, key)
+      # ap(get_user_data: {user_id: user_id, key: key})
       record = @user_data.find_one({"_id" => BSON::ObjectId(user_id)}, fields: {key => 1})
       if record
         record[key]
@@ -112,6 +121,7 @@ module Motivoo
     # Removes user data from the database.
     #
     def destroy_user_data(user_id)
+      # ap(destroy_user_data: {user_id: user_id})
       @user_data.remove("_id" => BSON::ObjectId(user_id))
     end
     

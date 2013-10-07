@@ -4,6 +4,8 @@
 require 'sinatra'
 require 'motivoo'
 
+require 'awesome_print'
+
 enable :inline_templates
 
 # Fake users along with their ids.
