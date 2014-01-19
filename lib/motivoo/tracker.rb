@@ -164,6 +164,8 @@ module Motivoo
       callback_result = invoke_before_callbacks(category, status)
       return if callback_result.skip?
       
+      # puts "do_track(#{category.inspect}, #{status.inspect})"
+      
       user_cohorts = @user_data.cohorts
       Tracker.cohorts.each_pair do |cohort_name, proc|
         assigned_cohort = user_cohorts[cohort_name]
